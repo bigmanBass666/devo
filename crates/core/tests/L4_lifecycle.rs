@@ -59,7 +59,10 @@ async fn ctrl_c_aborts_gracefully() {
     //   4. Assert partial text is preserved in session.messages
 
     let provider = ScriptedProvider::builder()
-        .turn(make_text_turn("partial text before interrupt", StopReason::EndTurn))
+        .turn(make_text_turn(
+            "partial text before interrupt",
+            StopReason::EndTurn,
+        ))
         .build();
     let (registry, orchestrator) = setup_registry();
 
@@ -82,7 +85,10 @@ async fn ctrl_c_aborts_gracefully() {
                 _ => false,
             })
     });
-    assert!(has_partial, "partial assistant text should be saved on abort");
+    assert!(
+        has_partial,
+        "partial assistant text should be saved on abort"
+    );
 }
 
 /// When cancellation fires during tool execution, the tool should be
@@ -124,7 +130,10 @@ async fn abort_during_tool_execution() {
 #[ignore = "1.10 interrupt/resume not yet implemented"]
 async fn abort_preserves_session_state() {
     let provider = ScriptedProvider::builder()
-        .turn(make_text_turn("first complete response", StopReason::EndTurn))
+        .turn(make_text_turn(
+            "first complete response",
+            StopReason::EndTurn,
+        ))
         .build();
     let (registry, orchestrator) = setup_registry();
 
@@ -143,7 +152,11 @@ async fn abort_preserves_session_state() {
     }
 
     // All assistant messages should have valid content
-    for msg in session.messages.iter().filter(|m| m.role == Role::Assistant) {
+    for msg in session
+        .messages
+        .iter()
+        .filter(|m| m.role == Role::Assistant)
+    {
         for block in &msg.content {
             match block {
                 ContentBlock::Text { text } => {
@@ -188,7 +201,10 @@ async fn memory_prefetch_loads_claude_md() {
         .unwrap();
 
     let requests = captured.lock().unwrap();
-    let system = requests[0].system.as_ref().expect("system prompt should be set");
+    let system = requests[0]
+        .system
+        .as_ref()
+        .expect("system prompt should be set");
     assert!(
         system.contains("Always respond in haiku format"),
         "system prompt should include CLAUDE.md content, got: {}",
@@ -284,10 +300,7 @@ async fn usage_includes_cache_tokens() {
                 cache_creation_input_tokens,
                 cache_read_input_tokens,
                 ..
-            } => Some((
-                cache_creation_input_tokens.clone(),
-                cache_read_input_tokens.clone(),
-            )),
+            } => Some((*cache_creation_input_tokens, *cache_read_input_tokens)),
             _ => None,
         })
         .collect();

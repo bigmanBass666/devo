@@ -312,9 +312,8 @@ async fn input_budget_checked_each_turn() {
 #[tokio::test]
 async fn micro_compact_large_tool_result() {
     let large_output = "x".repeat(15_000);
-    let spy = SpyTool::new("my_tool", false).with_response(move |_| {
-        ToolOutput::success(large_output.clone())
-    });
+    let spy = SpyTool::new("my_tool", false)
+        .with_response(move |_| ToolOutput::success(large_output.clone()));
 
     let provider = ScriptedProvider::builder()
         .turn(make_tool_turn(
@@ -354,8 +353,7 @@ async fn micro_compact_large_tool_result() {
 /// Small tool results should be left untouched by micro-compact.
 #[tokio::test]
 async fn micro_compact_small_tool_result_untouched() {
-    let spy = SpyTool::new("my_tool", false)
-        .with_response(|_| ToolOutput::success("short result"));
+    let spy = SpyTool::new("my_tool", false).with_response(|_| ToolOutput::success("short result"));
 
     let provider = ScriptedProvider::builder()
         .turn(make_tool_turn(
@@ -384,7 +382,10 @@ async fn micro_compact_small_tool_result_untouched() {
         })
         .expect("should have tool_result");
 
-    assert_eq!(tool_result_content, "short result", "small results should be preserved as-is");
+    assert_eq!(
+        tool_result_content, "short result",
+        "small results should be preserved as-is"
+    );
 }
 
 /// The compact strategy should be pluggable — a custom strategy implementation

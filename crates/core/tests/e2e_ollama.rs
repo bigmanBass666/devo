@@ -16,7 +16,9 @@ mod harness;
 use std::sync::{Arc, Mutex};
 
 use claw_compact::TokenBudget;
-use claw_core::{query, ContentBlock, EventCallback, Message, QueryEvent, Role, SessionConfig, SessionState};
+use claw_core::{
+    query, ContentBlock, EventCallback, Message, QueryEvent, Role, SessionConfig, SessionState,
+};
 use claw_permissions::PermissionMode;
 use claw_provider::openai_compat::OpenAICompatProvider;
 use claw_tools::{ToolOrchestrator, ToolRegistry};
@@ -77,7 +79,7 @@ async fn e2e_single_turn_text_response() {
 
     let mut session = make_e2e_session("What is 2+2? Answer with just the number.");
 
-    let result = tokio::time::timeout(
+    tokio::time::timeout(
         TIMEOUT,
         query(
             &mut session,
@@ -91,16 +93,21 @@ async fn e2e_single_turn_text_response() {
     .expect("query timed out")
     .expect("query failed");
 
-    assert_eq!(result, ());
-
     // Session should contain: user message + assistant reply
-    assert!(session.messages.len() >= 2, "expected at least 2 messages, got {}", session.messages.len());
+    assert!(
+        session.messages.len() >= 2,
+        "expected at least 2 messages, got {}",
+        session.messages.len()
+    );
     assert_eq!(session.messages[0].role, Role::User);
     assert_eq!(session.messages.last().unwrap().role, Role::Assistant);
 
     // Assistant message should have text content
     let assistant = session.messages.last().unwrap();
-    let has_text = assistant.content.iter().any(|b| matches!(b, ContentBlock::Text { .. }));
+    let has_text = assistant
+        .content
+        .iter()
+        .any(|b| matches!(b, ContentBlock::Text { .. }));
     assert!(has_text, "assistant response should contain text");
 
     // Should have received at least one TextDelta event
@@ -153,7 +160,9 @@ async fn e2e_streaming_text_deltas() {
     eprintln!("[e2e] received {} text delta events", delta_count);
 
     // TurnComplete event should be emitted
-    let has_turn_complete = ev.iter().any(|e| matches!(e, QueryEvent::TurnComplete { .. }));
+    let has_turn_complete = ev
+        .iter()
+        .any(|e| matches!(e, QueryEvent::TurnComplete { .. }));
     assert!(has_turn_complete, "should emit TurnComplete event");
 }
 
@@ -309,7 +318,11 @@ async fn e2e_memory_prefetch_claude_md() {
     let tmp = std::env::temp_dir().join(format!("claw_e2e_{}", std::process::id()));
     std::fs::create_dir_all(&tmp).unwrap();
     let claude_md = tmp.join("CLAUDE.md");
-    std::fs::write(&claude_md, "IMPORTANT: The secret code word is PINEAPPLE42.").unwrap();
+    std::fs::write(
+        &claude_md,
+        "IMPORTANT: The secret code word is PINEAPPLE42.",
+    )
+    .unwrap();
 
     let config = SessionConfig {
         model: MODEL.to_string(),
@@ -372,7 +385,9 @@ async fn e2e_auto_compact_on_budget_threshold() {
     let mut session = SessionState::new(config, std::env::temp_dir());
 
     // Fill the session with enough messages to push past the budget
-    session.push_message(Message::user("Repeat after me: The quick brown fox jumps over the lazy dog."));
+    session.push_message(Message::user(
+        "Repeat after me: The quick brown fox jumps over the lazy dog.",
+    ));
 
     tokio::time::timeout(
         TIMEOUT,
@@ -442,8 +457,12 @@ async fn e2e_micro_compact_large_tool_result() {
 
     #[async_trait::async_trait]
     impl Tool for BigResultTool {
-        fn name(&self) -> &str { "big_result" }
-        fn description(&self) -> &str { "Returns a large blob of text for testing." }
+        fn name(&self) -> &str {
+            "big_result"
+        }
+        fn description(&self) -> &str {
+            "Returns a large blob of text for testing."
+        }
         fn input_schema(&self) -> serde_json::Value {
             serde_json::json!({
                 "type": "object",
@@ -459,7 +478,9 @@ async fn e2e_micro_compact_large_tool_result() {
             let big = "x".repeat(20_000);
             Ok(claw_tools::ToolOutput::success(big))
         }
-        fn is_read_only(&self) -> bool { true }
+        fn is_read_only(&self) -> bool {
+            true
+        }
     }
 
     let provider = make_provider();
@@ -526,7 +547,10 @@ async fn e2e_micro_compact_large_tool_result() {
             eprintln!("[e2e] model didn't call the tool — micro_compact not exercised in this run");
         }
     } else {
-        eprintln!("[e2e] query returned error (expected for some models): {:?}", result);
+        eprintln!(
+            "[e2e] query returned error (expected for some models): {:?}",
+            result
+        );
     }
 }
 
@@ -546,7 +570,8 @@ async fn e2e_tool_use_round_trip() {
 
     let config = SessionConfig {
         model: MODEL.to_string(),
-        system_prompt: "You have access to a bash tool. Use it when asked to run commands.".to_string(),
+        system_prompt: "You have access to a bash tool. Use it when asked to run commands."
+            .to_string(),
         max_turns: 5,
         token_budget: TokenBudget::new(32_000, 2_048),
         permission_mode: PermissionMode::AutoApprove,
@@ -574,8 +599,14 @@ async fn e2e_tool_use_round_trip() {
     for e in ev.iter() {
         match e {
             QueryEvent::ToolUseStart { name, .. } => eprintln!("  tool_use_start: {}", name),
-            QueryEvent::ToolResult { content, is_error, .. } => {
-                eprintln!("  tool_result (error={}): {}", is_error, &content[..content.len().min(200)])
+            QueryEvent::ToolResult {
+                content, is_error, ..
+            } => {
+                eprintln!(
+                    "  tool_result (error={}): {}",
+                    is_error,
+                    &content[..content.len().min(200)]
+                )
             }
             QueryEvent::TextDelta(t) => eprint!("{}", t),
             _ => {}
@@ -594,13 +625,21 @@ async fn e2e_tool_use_round_trip() {
             if tool_starts.is_empty() {
                 eprintln!("[e2e] model chose not to use tools — this is model-dependent, not a runtime bug");
             } else {
-                eprintln!("[e2e] model made {} tool call(s) — tool flow verified!", tool_starts.len());
+                eprintln!(
+                    "[e2e] model made {} tool call(s) — tool flow verified!",
+                    tool_starts.len()
+                );
 
                 // Verify the tool result was appended to the session
                 let has_tool_result = session.messages.iter().any(|m| {
-                    m.content.iter().any(|b| matches!(b, ContentBlock::ToolResult { .. }))
+                    m.content
+                        .iter()
+                        .any(|b| matches!(b, ContentBlock::ToolResult { .. }))
                 });
-                assert!(has_tool_result, "session should contain tool_result messages");
+                assert!(
+                    has_tool_result,
+                    "session should contain tool_result messages"
+                );
 
                 // Verify multi-turn happened (assistant → tool_result → assistant)
                 assert!(
@@ -631,13 +670,7 @@ async fn e2e_connection_error_is_provider_error() {
 
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(15),
-        query(
-            &mut session,
-            &bad_provider,
-            registry,
-            &orchestrator,
-            None,
-        ),
+        query(&mut session, &bad_provider, registry, &orchestrator, None),
     )
     .await
     .expect("should not hang");
@@ -691,8 +724,5 @@ async fn e2e_system_prompt_affects_response() {
     let response = collected_text(&ev);
     eprintln!("[e2e] pirate response: {}", response);
     // The model should follow the system prompt (somewhat)
-    assert!(
-        !response.is_empty(),
-        "should produce a non-empty response"
-    );
+    assert!(!response.is_empty(), "should produce a non-empty response");
 }

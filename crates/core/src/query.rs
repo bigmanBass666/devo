@@ -126,9 +126,7 @@ fn micro_compact(content: String) -> String {
 
 fn load_claude_md(cwd: &std::path::Path) -> Option<String> {
     let path = cwd.join("CLAUDE.md");
-    std::fs::read_to_string(path)
-        .ok()
-        .filter(|s| !s.is_empty())
+    std::fs::read_to_string(path).ok().filter(|s| !s.is_empty())
 }
 
 fn build_system_prompt(base: &str, memory: &Option<String>) -> String {
@@ -183,7 +181,10 @@ pub async fn query(
     loop {
         // 1.3 + 1.7: Check token budget and compact before building the request
         if session.last_input_tokens > 0
-            && session.config.token_budget.should_compact(session.last_input_tokens)
+            && session
+                .config
+                .token_budget
+                .should_compact(session.last_input_tokens)
         {
             info!("token budget threshold exceeded — compacting session");
             compact_session(session);
@@ -334,9 +335,7 @@ pub async fn query(
             // 1.6: MaxOutputTokens auto-continue
             if stop_reason == Some(StopReason::MaxTokens) {
                 debug!("max_tokens reached — injecting continuation prompt");
-                session.push_message(Message::user(
-                    "Please continue from where you left off.",
-                ));
+                session.push_message(Message::user("Please continue from where you left off."));
                 continue;
             }
 

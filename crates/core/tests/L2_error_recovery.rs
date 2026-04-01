@@ -50,7 +50,10 @@ fn setup_registry_with_tool(tool: SpyTool) -> (Arc<ToolRegistry>, ToolOrchestrat
 async fn context_too_long_triggers_compact() {
     let provider = ScriptedProvider::builder()
         .turn_error(anyhow::anyhow!("context_too_long"))
-        .turn(make_text_turn("recovered after compact", StopReason::EndTurn))
+        .turn(make_text_turn(
+            "recovered after compact",
+            StopReason::EndTurn,
+        ))
         .build();
     let captured = provider.captured_requests.clone();
     let (registry, orchestrator) = setup_registry();
@@ -63,7 +66,11 @@ async fn context_too_long_triggers_compact() {
     }
 
     let result = query(&mut session, &provider, registry, &orchestrator, None).await;
-    assert!(result.is_ok(), "should recover via compact, got: {:?}", result);
+    assert!(
+        result.is_ok(),
+        "should recover via compact, got: {:?}",
+        result
+    );
 
     // The second request should have fewer messages than the first attempt
     let requests = captured.lock().unwrap();
@@ -106,7 +113,10 @@ async fn max_output_tokens_auto_continue() {
         // Turn 1: model is cut off mid-text
         .turn(make_text_turn("partial response...", StopReason::MaxTokens))
         // Turn 2: model continues after auto-injected prompt
-        .turn(make_text_turn(" and here is the rest.", StopReason::EndTurn))
+        .turn(make_text_turn(
+            " and here is the rest.",
+            StopReason::EndTurn,
+        ))
         .build();
     let captured = provider.captured_requests.clone();
     let (registry, orchestrator) = setup_registry();
@@ -164,7 +174,10 @@ async fn max_output_tokens_with_tool_use() {
             .iter()
             .any(|b| matches!(b, ContentBlock::ToolResult { .. }))
     });
-    assert!(has_tool_result, "tool should be executed when MaxTokens + tool_use");
+    assert!(
+        has_tool_result,
+        "tool should be executed when MaxTokens + tool_use"
+    );
 }
 
 // ---------------------------------------------------------------------------
