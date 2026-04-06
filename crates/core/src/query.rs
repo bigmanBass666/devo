@@ -14,7 +14,14 @@ pub enum QueryEvent {
     /// Incremental text from the assistant.
     TextDelta(String),
     /// The assistant started a tool call.
-    ToolUseStart { id: String, name: String },
+    ToolUseStart {
+        /// Stable provider-issued tool use identifier.
+        id: String,
+        /// Tool name selected by the model.
+        name: String,
+        /// Fully decoded tool input payload, when available.
+        input: serde_json::Value,
+    },
     /// A tool call completed.
     ToolResult {
         tool_use_id: String,
@@ -264,10 +271,6 @@ pub async fn query(
                     content: ResponseContent::ToolUse { id, name, .. },
                     ..
                 }) => {
-                    emit(QueryEvent::ToolUseStart {
-                        id: id.clone(),
-                        name: name.clone(),
-                    });
                     tool_uses.push((id, name, String::new()));
                 }
                 Ok(StreamEvent::InputJsonDelta { partial_json, .. }) => {
@@ -316,6 +319,11 @@ pub async fn query(
             .map(|(id, name, json_str)| {
                 let input = serde_json::from_str(&json_str)
                     .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+                emit(QueryEvent::ToolUseStart {
+                    id: id.clone(),
+                    name: name.clone(),
+                    input: input.clone(),
+                });
                 assistant_content.push(ContentBlock::ToolUse {
                     id: id.clone(),
                     name: name.clone(),

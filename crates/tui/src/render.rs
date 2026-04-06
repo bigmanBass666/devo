@@ -133,25 +133,7 @@ fn transcript_text(app: &TuiApp) -> Text<'static> {
 
     let mut lines = Vec::new();
     for item in &app.transcript {
-        lines.push(Line::from(vec![Span::styled(
-            item.title.clone(),
-            Style::new()
-                .fg(item.kind.accent())
-                .add_modifier(Modifier::BOLD),
-        )]));
-        if item.body.is_empty() {
-            lines.push(Line::from(""));
-        } else {
-            for line in item.body.lines() {
-                lines.push(Line::from(match item.kind {
-                    TranscriptItemKind::Error => vec![Span::styled(
-                        line.to_string(),
-                        Style::new().fg(TranscriptItemKind::Error.accent()),
-                    )],
-                    _ => vec![Span::raw(line.to_string())],
-                }));
-            }
-        }
+        append_transcript_item(&mut lines, item);
         lines.push(Line::from(""));
     }
     Text::from(lines)
@@ -170,6 +152,66 @@ fn transcript_line_count(app: &TuiApp, inner_width: u16) -> u16 {
             title_lines + body_lines + 1
         })
         .sum()
+}
+
+fn append_transcript_item(lines: &mut Vec<Line<'static>>, item: &crate::events::TranscriptItem) {
+    match item.kind {
+        TranscriptItemKind::User => {
+            lines.push(Line::from(vec![
+                Span::styled("› ", Style::new().fg(item.kind.accent()).add_modifier(Modifier::BOLD)),
+                Span::raw(item.body.clone()),
+            ]));
+        }
+        TranscriptItemKind::Assistant
+        | TranscriptItemKind::ToolCall
+        | TranscriptItemKind::ToolResult
+        | TranscriptItemKind::System
+        | TranscriptItemKind::Error => {
+            lines.push(Line::from(vec![
+                Span::styled(
+                    "• ",
+                    Style::new()
+                        .fg(item.kind.accent())
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    item.title.clone(),
+                    Style::new()
+                        .fg(item.kind.accent())
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]));
+            append_transcript_body(lines, item);
+        }
+    }
+}
+
+fn append_transcript_body(lines: &mut Vec<Line<'static>>, item: &crate::events::TranscriptItem) {
+    if item.body.is_empty() {
+        return;
+    }
+
+    let mut body_lines = item.body.lines();
+    if let Some(first) = body_lines.next() {
+        lines.push(Line::from(styled_body_line(
+            format!("  └ {first}"),
+            item.kind,
+        )));
+    }
+    for line in body_lines {
+        lines.push(Line::from(styled_body_line(
+            format!("    {line}"),
+            item.kind,
+        )));
+    }
+}
+
+fn styled_body_line(text: String, kind: TranscriptItemKind) -> Vec<Span<'static>> {
+    match kind {
+        TranscriptItemKind::Error => vec![Span::styled(text, Style::new().fg(kind.accent()))],
+        TranscriptItemKind::ToolCall => vec![Span::styled(text, Style::new().dark_gray())],
+        _ => vec![Span::raw(text)],
+    }
 }
 
 fn wrapped_line_count(text: &str, inner_width: u16) -> u16 {

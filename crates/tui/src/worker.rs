@@ -230,12 +230,12 @@ fn handle_completed_item(
             payload,
             ..
         } => {
-            let name = payload
-                .get("tool_name")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("tool")
-                .to_string();
-            let _ = event_tx.send(WorkerEvent::ToolCall { name });
+            let summary = summarize_tool_call(&payload);
+            let detail = payload
+                .get("input")
+                .map(render_json_preview)
+                .filter(|detail| !detail.is_empty());
+            let _ = event_tx.send(WorkerEvent::ToolCall { summary, detail });
         }
         ItemEnvelope {
             item_kind: ItemKind::ToolResult,
@@ -244,18 +244,95 @@ fn handle_completed_item(
         } => {
             let content = payload
                 .get("content")
-                .map(serde_json::Value::to_string)
-                .unwrap_or_else(|| "\"\"".to_string());
+                .map(render_json_value_text)
+                .unwrap_or_default();
             let is_error = payload
                 .get("is_error")
                 .and_then(serde_json::Value::as_bool)
                 .unwrap_or(false);
+            let preview = truncate_tool_output(&content);
+            let truncated = preview != content;
             let _ = event_tx.send(WorkerEvent::ToolResult {
-                content: content.trim_matches('"').to_string(),
+                preview,
                 is_error,
+                truncated,
             });
         }
         _ => {}
+    }
+}
+
+fn summarize_tool_call(payload: &serde_json::Value) -> String {
+    let tool_name = payload
+        .get("tool_name")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("tool");
+    let input = payload.get("input").unwrap_or(&serde_json::Value::Null);
+    match tool_name {
+        "bash" => input
+            .get("command")
+            .and_then(serde_json::Value::as_str)
+            .map(|command| format!("Ran {command}"))
+            .unwrap_or_else(|| "Ran shell command".to_string()),
+        other => format!("Ran {other}"),
+    }
+}
+
+fn render_json_preview(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::Null => String::new(),
+        serde_json::Value::String(text) => truncate_tool_output(text),
+        serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
+            let pretty = serde_json::to_string_pretty(value).unwrap_or_else(|_| value.to_string());
+            truncate_tool_output(&pretty)
+        }
+        _ => truncate_tool_output(&value.to_string()),
+    }
+}
+
+fn render_json_value_text(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::String(text) => text.clone(),
+        _ => value.to_string(),
+    }
+}
+
+fn truncate_tool_output(content: &str) -> String {
+    const MAX_LINES: usize = 8;
+    const MAX_CHARS: usize = 1200;
+
+    let mut lines = Vec::new();
+    let mut chars = 0usize;
+    for line in content.lines() {
+        if lines.len() >= MAX_LINES || chars >= MAX_CHARS {
+            break;
+        }
+        let remaining = MAX_CHARS.saturating_sub(chars);
+        if line.chars().count() > remaining {
+            let preview = line.chars().take(remaining).collect::<String>();
+            lines.push(preview);
+            break;
+        }
+        chars += line.chars().count();
+        lines.push(line.to_string());
+    }
+
+    if lines.is_empty() && !content.is_empty() {
+        let preview = content.chars().take(MAX_CHARS).collect::<String>();
+        return if preview == content {
+            preview
+        } else {
+            format!("{preview}\n… output truncated")
+        };
+    }
+
+    let preview = lines.join("\n");
+    if preview == content {
+        preview
+    } else if preview.is_empty() {
+        "… output truncated".to_string()
+    } else {
+        format!("{preview}\n… output truncated")
     }
 }
 
@@ -266,5 +343,40 @@ fn map_join_error(error: JoinError) -> anyhow::Error {
         anyhow::anyhow!("interactive worker task panicked")
     } else {
         anyhow::Error::new(error)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+
+    use super::{summarize_tool_call, truncate_tool_output};
+
+    #[test]
+    fn bash_tool_summary_uses_command_text() {
+        let payload = serde_json::json!({
+            "tool_name": "bash",
+            "input": {
+                "command": "Get-Date -Format \"yyyy-MM-dd\""
+            }
+        });
+
+        assert_eq!(
+            summarize_tool_call(&payload),
+            "Ran Get-Date -Format \"yyyy-MM-dd\""
+        );
+    }
+
+    #[test]
+    fn tool_output_preview_truncates_large_content() {
+        let content = (1..=12)
+            .map(|index| format!("line {index}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert_eq!(
+            truncate_tool_output(&content),
+            "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\n… output truncated"
+        );
     }
 }

@@ -719,7 +719,7 @@ impl ServerRuntime {
                             })
                             .await;
                     }
-                    QueryEvent::ToolUseStart { id, name } => {
+                    QueryEvent::ToolUseStart { id, name, input } => {
                         runtime
                             .emit_item_pair(
                                 session_id,
@@ -728,6 +728,7 @@ impl ServerRuntime {
                                 serde_json::json!({
                                     "tool_use_id": id,
                                     "tool_name": name,
+                                    "input": input,
                                 }),
                             )
                             .await;

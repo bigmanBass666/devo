@@ -317,15 +317,19 @@ impl TuiApp {
                 self.transcript[index].body.push_str(&text);
                 self.status_message = "Streaming response".to_string();
             }
-            WorkerEvent::ToolCall { name } => {
+            WorkerEvent::ToolCall { summary, detail } => {
                 self.push_item(
                     TranscriptItemKind::ToolCall,
-                    format!("Tool: {name}"),
-                    "Running tool".to_string(),
+                    summary.clone(),
+                    detail.unwrap_or_default(),
                 );
-                self.status_message = format!("Running tool {name}");
+                self.status_message = format!("{summary}...");
             }
-            WorkerEvent::ToolResult { content, is_error } => {
+            WorkerEvent::ToolResult {
+                preview,
+                is_error,
+                truncated,
+            } => {
                 let kind = if is_error {
                     TranscriptItemKind::Error
                 } else {
@@ -334,9 +338,14 @@ impl TuiApp {
                 let title = if is_error {
                     "Tool error"
                 } else {
-                    "Tool result"
+                    "Tool output"
                 };
-                self.push_item(kind, title, content);
+                let body = if truncated {
+                    preview
+                } else {
+                    preview
+                };
+                self.push_item(kind, title, body);
                 self.status_message = if is_error {
                     "Tool returned an error".to_string()
                 } else {
@@ -449,8 +458,9 @@ mod tests {
     async fn tool_results_create_separate_items() {
         let mut app = test_app();
         app.handle_worker_event(WorkerEvent::ToolResult {
-            content: "done".to_string(),
+            preview: "done".to_string(),
             is_error: false,
+            truncated: false,
         });
 
         assert_eq!(app.transcript.len(), 1);

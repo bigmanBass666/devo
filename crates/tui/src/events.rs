@@ -8,9 +8,21 @@ pub(crate) enum WorkerEvent {
     /// Incremental assistant text.
     TextDelta(String),
     /// A tool call started.
-    ToolCall { name: String },
+    ToolCall {
+        /// Human-readable summary line for the tool execution.
+        summary: String,
+        /// Optional structured input preview for the tool call.
+        detail: Option<String>,
+    },
     /// A tool call finished.
-    ToolResult { content: String, is_error: bool },
+    ToolResult {
+        /// Human-readable output preview shown in the transcript.
+        preview: String,
+        /// Whether the tool returned an error.
+        is_error: bool,
+        /// Whether the preview was truncated for display.
+        truncated: bool,
+    },
     /// The current turn completed successfully.
     TurnFinished {
         /// Human-readable stop reason.
