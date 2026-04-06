@@ -105,7 +105,7 @@ cargo run -- -q "list files in the current directory"
 ### CLI Options
 
 ```text
-Usage: claw-rs [OPTIONS]
+Usage: clawcr [OPTIONS]
 
 Options:
   -m, --model <MODEL>          Model name (default: auto per provider)
@@ -209,7 +209,7 @@ Connects to external MCP services, bringing remote tools, resources, and prompts
 <details>
 <summary><b>clawcr-cli</b> — CLI entry point</summary>
 
-Packages the executable as `claw-rs` and wires together the runtime crates for interactive and one-shot use.
+Packages the executable as `clawcr` and wires together the runtime crates for interactive and one-shot use.
 </details>
 
 ## 🗺 Roadmap

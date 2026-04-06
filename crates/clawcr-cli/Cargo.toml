@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "claw-rs"
+name = "clawcr"
 path = "src/main.rs"
 
 [dependencies]
@@ -15,14 +15,16 @@ clawcr-tools = { workspace = true }
 clawcr-provider = { workspace = true }
 clawcr-safety = { workspace = true }
 clawcr-tasks = { workspace = true }
+clawcr-utils = { workspace = true }
+clawcr-server = { workspace = true }
 
 tokio = { workspace = true }
 futures = { workspace = true }
 async-trait = { workspace = true }
 clap = { workspace = true }
 serde_json = { workspace = true }
+toml = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 serde = { workspace = true }
-dirs = "6"

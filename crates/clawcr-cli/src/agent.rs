@@ -2,18 +2,16 @@ use std::io::{self, BufRead, Write};
 use std::sync::Arc;
 
 use anyhow::Result;
-use clap::Parser;
-
-use clawcr_core::{query, Message, QueryEvent, SessionConfig, SessionState};
+use clap::Args;
+use clawcr_core::{Message, QueryEvent, SessionConfig, SessionState, query};
 use clawcr_safety::legacy_permissions::PermissionMode;
 use clawcr_tools::{ToolOrchestrator, ToolRegistry};
 
-mod config;
-mod onboarding;
+use crate::config;
 
 /// Output format for non-interactive (print/query) mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum OutputFormat {
+pub enum OutputFormat {
     /// Plain text — assistant text only, streamed to stdout.
     Text,
     /// Newline-delimited JSON events (one JSON object per line).
@@ -24,6 +22,7 @@ enum OutputFormat {
 
 impl std::str::FromStr for OutputFormat {
     type Err = anyhow::Error;
+
     fn from_str(s: &str) -> Result<Self> {
         match s {
             "text" => Ok(OutputFormat::Text),
@@ -34,13 +33,12 @@ impl std::str::FromStr for OutputFormat {
     }
 }
 
-/// Claw RS — a modular agent runtime.
-#[derive(Parser, Debug)]
-#[command(name = "claw-rs", version, about)]
-struct Cli {
+/// Common agent-facing flags accepted by the main `clawcr` command.
+#[derive(Debug, Args)]
+pub struct AgentCli {
     /// Model to use (e.g. claude-sonnet-4-20250514, qwen3.5:9b)
     #[arg(short, long)]
-    model: Option<String>,
+    pub model: Option<String>,
 
     /// System prompt
     #[arg(
@@ -49,50 +47,41 @@ struct Cli {
         default_value = "You are a helpful coding assistant. \
         Use tools when appropriate to help the user. Be concise."
     )]
-    system: String,
+    pub system: String,
 
     /// Permission mode: auto, interactive, deny
     #[arg(short, long, default_value = "auto")]
-    permission: String,
+    pub permission: String,
 
     /// Run a single prompt non-interactively then exit
     #[arg(short = 'q', long)]
-    query: Option<String>,
+    pub query: Option<String>,
 
     /// Run a single prompt non-interactively then exit (alias for --query)
     #[arg(long)]
-    print: Option<String>,
+    pub print: Option<String>,
 
     /// Output format for non-interactive mode: text (default), stream-json, json
     #[arg(long, default_value = "text")]
-    output_format: OutputFormat,
+    pub output_format: OutputFormat,
 
     /// Maximum turns per conversation
     #[arg(long, default_value = "100")]
-    max_turns: usize,
+    pub max_turns: usize,
 
     /// Provider: anthropic, ollama, openai (auto-detected if not set)
     #[arg(long)]
-    provider: Option<String>,
+    pub provider: Option<String>,
 
     /// Ollama server URL
     #[arg(long, default_value = "http://localhost:11434")]
-    ollama_url: String,
+    pub ollama_url: String,
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("warn")),
-        )
-        .init();
-
-    let cli = Cli::parse();
+/// Runs the interactive or one-shot coding-agent entrypoint.
+pub async fn run_agent(cli: AgentCli) -> Result<()> {
     let cwd = std::env::current_dir()?;
 
-    // --print is an alias for --query; --query takes precedence if both given
     let single_prompt = cli.query.or(cli.print);
     let interactive = single_prompt.is_none();
 
@@ -106,18 +95,15 @@ async fn main() -> Result<()> {
         }
     };
 
-    // Register tools
     let mut registry = ToolRegistry::new();
     clawcr_tools::register_builtin_tools(&mut registry);
     let registry = Arc::new(registry);
     let orchestrator = ToolOrchestrator::new(Arc::clone(&registry));
 
-    // If provider is ollama (explicit or will be auto-detected), check availability
     if cli.provider.as_deref() == Some("ollama") {
         config::ensure_ollama(&cli.ollama_url, interactive)?;
     }
 
-    // Resolve provider: CLI flags > env vars > config file > onboarding
     let resolved = config::resolve_provider(
         cli.provider.as_deref(),
         cli.model.as_deref(),
@@ -135,7 +121,6 @@ async fn main() -> Result<()> {
 
     let mut session = SessionState::new(session_config, cwd);
 
-    // Single-query / print mode
     if let Some(prompt) = single_prompt {
         session.push_message(Message::user(prompt));
         let on_event = make_event_callback(cli.output_format);
@@ -153,12 +138,12 @@ async fn main() -> Result<()> {
                 .messages
                 .iter()
                 .rev()
-                .find(|m| matches!(m.role, clawcr_core::Role::Assistant));
-            if let Some(msg) = last_assistant {
-                let text: String = msg
+                .find(|message| matches!(message.role, clawcr_core::Role::Assistant));
+            if let Some(message) = last_assistant {
+                let text: String = message
                     .content
                     .iter()
-                    .filter_map(|b| match b {
+                    .filter_map(|block| match block {
                         clawcr_core::ContentBlock::Text { text } => Some(text.as_str()),
                         _ => None,
                     })
@@ -180,8 +165,7 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Interactive REPL
-    println!("Claw RS v{}", env!("CARGO_PKG_VERSION"));
+    println!("ClawCR v{}", env!("CARGO_PKG_VERSION"));
     println!("Type your message, or 'exit' / Ctrl-D to quit.\n");
 
     let on_event = make_event_callback(OutputFormat::Text);
@@ -204,7 +188,7 @@ async fn main() -> Result<()> {
 
         session.push_message(Message::user(line));
 
-        if let Err(e) = query(
+        if let Err(error) = query(
             &mut session,
             resolved.provider.as_ref(),
             Arc::clone(&registry),
@@ -213,7 +197,7 @@ async fn main() -> Result<()> {
         )
         .await
         {
-            eprintln!("error: {}", e);
+            eprintln!("error: {}", error);
         }
     }
 
@@ -224,10 +208,6 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
-
-// ---------------------------------------------------------------------------
-// Event callback factory
-// ---------------------------------------------------------------------------
 
 fn make_event_callback(format: OutputFormat) -> Arc<dyn Fn(QueryEvent) + Send + Sync> {
     Arc::new(move |event| match format {
@@ -281,7 +261,7 @@ fn handle_event_text(event: QueryEvent) {
 }
 
 fn handle_event_stream_json(event: QueryEvent) {
-    let obj = match event {
+    let object = match event {
         QueryEvent::TextDelta(text) => {
             serde_json::json!({ "type": "text_delta", "text": text })
         }
@@ -301,7 +281,7 @@ fn handle_event_stream_json(event: QueryEvent) {
             })
         }
         QueryEvent::TurnComplete { stop_reason } => {
-            serde_json::json!({ "type": "turn_complete", "stop_reason": format!("{:?}", stop_reason) })
+            serde_json::json!({ "type": "turn_complete", "stop_reason": format!("{stop_reason:?}") })
         }
         QueryEvent::Usage {
             input_tokens,
@@ -318,7 +298,7 @@ fn handle_event_stream_json(event: QueryEvent) {
             })
         }
     };
-    println!("{}", obj);
+    println!("{object}");
 }
 
 fn truncate(s: &str, max: usize) -> String {
@@ -336,7 +316,7 @@ fn truncate(s: &str, max: usize) -> String {
 fn byte_summary(s: &str) -> String {
     let len = s.len();
     if len < 1024 {
-        format!("{} bytes", len)
+        format!("{len} bytes")
     } else {
         format!("{:.1} KB", len as f64 / 1024.0)
     }
@@ -363,48 +343,35 @@ mod tests {
 
     #[test]
     fn truncate_multibyte_at_char_boundary() {
-        // 'é' is 2 bytes; "café" = [99, 97, 102, 195, 169] = 5 bytes
         assert_eq!(truncate("café", 4), "caf...");
     }
 
     #[test]
     fn truncate_multibyte_inside_char() {
-        // CJK char '中' is 3 bytes (228, 184, 173)
-        // "a中b" = [97, 228, 184, 173, 98] = 5 bytes
-        // Cutting at byte 2 lands inside '中', should back up to byte 1
         assert_eq!(truncate("a中b", 2), "a...");
     }
 
     #[test]
     fn truncate_cjk_string() {
-        // Each CJK char is 3 bytes; "你好世界" = 12 bytes
-        // max=7 lands inside 3rd char (bytes 6..9), should back up to byte 6
-        let result = truncate("你好世界", 7);
-        assert_eq!(result, "你好...");
+        assert_eq!(truncate("你好世界", 7), "你好...");
     }
 
     #[test]
     fn truncate_emoji() {
-        // '😀' is 4 bytes
-        // "hi😀bye" = [104, 105, 240, 159, 152, 128, 98, 121, 101] = 9 bytes
-        // max=4 lands inside emoji (bytes 2..6), should back up to byte 2
         assert_eq!(truncate("hi😀bye", 4), "hi...");
     }
 
     #[test]
     fn truncate_japanese() {
-        // Hiragana 'こ','ん','に','ち','は' are each 3 bytes = 15 bytes total
-        // max=8 lands inside 3rd char (bytes 6..9), should back up to byte 6
         assert_eq!(truncate("こんにちは", 8), "こん...");
     }
 
     #[test]
     fn truncate_mixed_cjk_error_output() {
-        // Simulates real-world cargo stderr with mixed CJK and ASCII
         let input = "error[E0308]: エラー: 型が一致しません expected `i32`, found `&str`";
         let result = truncate(input, 30);
         assert!(result.ends_with("..."));
-        assert!(result.len() <= 33 + 3); // at most 33 bytes content + "..."
+        assert!(result.len() <= 33 + 3);
     }
 
     #[test]

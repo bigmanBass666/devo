@@ -9,6 +9,7 @@ license.workspace = true
 clawcr-tools = { workspace = true }
 clawcr-provider = { workspace = true }
 clawcr-safety = { workspace = true }
+clawcr-utils = { workspace = true }
 
 tokio = { workspace = true }
 tokio-stream = { workspace = true }

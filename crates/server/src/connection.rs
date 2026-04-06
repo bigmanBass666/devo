@@ -10,8 +10,6 @@ pub enum ClientTransportKind {
     Stdio,
     /// The client is connected over a WebSocket transport.
     WebSocket,
-    /// The client is connected through an embedded in-process bridge.
-    Embedded,
 }
 
 /// Stores the lifecycle state of one transport connection.

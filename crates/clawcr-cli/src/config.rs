@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use clawcr_utils::{current_user_config_file, FileSystemConfigPathResolver};
 
 use clawcr_provider::ModelProvider;
 
@@ -28,22 +29,62 @@ pub struct ResolvedProvider {
 // Config file I/O
 // ---------------------------------------------------------------------------
 
-/// `~/.claw-code-rust/config.json`
+/// `~/.clawcr/config.toml`
 pub fn config_path() -> Result<PathBuf> {
-    let home = dirs::home_dir().context("could not determine home directory")?;
-    Ok(home.join(".claw-code-rust").join("config.json"))
+    current_user_config_file().context("could not determine user config path")
+}
+
+/// The previous JSON location under the current `.clawcr` directory.
+fn legacy_json_config_path() -> Result<PathBuf> {
+    let resolver = FileSystemConfigPathResolver::from_env()
+        .context("could not determine home directory for legacy config path")?;
+    Ok(resolver.user_config_dir().join("config.json"))
+}
+
+/// The older pre-spec JSON location used by early CLI builds.
+fn legacy_cli_config_path() -> Result<PathBuf> {
+    let resolver = FileSystemConfigPathResolver::from_env()
+        .context("could not determine home directory for legacy config path")?;
+    Ok(resolver
+        .user_config_dir()
+        .parent()
+        .expect("config dir should have a parent home directory")
+        .join(".claw-code-rust")
+        .join("config.json"))
+}
+
+/// Load a JSON config file from one of the legacy locations.
+fn load_legacy_json_config(path: &Path) -> Result<AppConfig> {
+    let data = std::fs::read_to_string(path)
+        .with_context(|| format!("failed to read {}", path.display()))?;
+    serde_json::from_str(&data).with_context(|| format!("failed to parse {}", path.display()))
 }
 
 pub fn load_config() -> Result<AppConfig> {
     let path = config_path()?;
-    if !path.exists() {
-        return Ok(AppConfig::default());
+    if path.exists() {
+        let data = std::fs::read_to_string(&path)
+            .with_context(|| format!("failed to read {}", path.display()))?;
+        let cfg: AppConfig = toml::from_str(&data)
+            .with_context(|| format!("failed to parse {}", path.display()))?;
+        return Ok(cfg);
     }
-    let data = std::fs::read_to_string(&path)
-        .with_context(|| format!("failed to read {}", path.display()))?;
-    let cfg: AppConfig = serde_json::from_str(&data)
-        .with_context(|| format!("failed to parse {}", path.display()))?;
-    Ok(cfg)
+
+    let legacy_json_path = legacy_json_config_path()?;
+    if legacy_json_path.exists() {
+        let cfg = load_legacy_json_config(&legacy_json_path)?;
+        save_config(&cfg)?;
+        return Ok(cfg);
+    }
+
+    let legacy_cli_path = legacy_cli_config_path()?;
+    if legacy_cli_path.exists() {
+        let cfg = load_legacy_json_config(&legacy_cli_path)?;
+        save_config(&cfg)?;
+        return Ok(cfg);
+    }
+
+    Ok(AppConfig::default())
 }
 
 pub fn save_config(config: &AppConfig) -> Result<()> {
@@ -52,8 +93,8 @@ pub fn save_config(config: &AppConfig) -> Result<()> {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("failed to create {}", parent.display()))?;
     }
-    let json = serde_json::to_string_pretty(config)?;
-    std::fs::write(&path, json).with_context(|| format!("failed to write {}", path.display()))?;
+    let toml = toml::to_string_pretty(config)?;
+    std::fs::write(&path, toml).with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
 }
 

@@ -8,7 +8,8 @@ members = [
     "crates/tasks",
     "crates/mcp",
     "crates/server",
-    "crates/claw-cli",
+    "crates/utils",
+    "crates/clawcr-cli",
 ]
 
 [workspace.package]
@@ -25,6 +26,8 @@ clawcr-provider = { path = "crates/provider" }
 clawcr-safety = { path = "crates/safety" }
 clawcr-tasks = { path = "crates/tasks" }
 clawcr-mcp = { path = "crates/mcp" }
+clawcr-utils = { path = "crates/utils" }
+clawcr-server = { path = "crates/server" }
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }

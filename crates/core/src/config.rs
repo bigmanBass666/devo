@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use clawcr_utils::FileSystemConfigPathResolver;
 use serde::{Deserialize, Serialize};
 
 use crate::model::{ModelCatalog, ModelConfig, ModelConfigError};
@@ -321,11 +322,11 @@ impl FileSystemAppConfigLoader {
     }
 
     fn user_config_path(&self) -> PathBuf {
-        self.user_home.join(".clawcr").join("config.toml")
+        FileSystemConfigPathResolver::new(self.user_home.clone()).user_config_file()
     }
 
     fn project_config_path(&self, workspace_root: &Path) -> PathBuf {
-        workspace_root.join(".clawcr").join("config.toml")
+        FileSystemConfigPathResolver::new(self.user_home.clone()).project_config_file(workspace_root)
     }
 }
 
