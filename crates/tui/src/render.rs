@@ -82,9 +82,10 @@ fn render_transcript(app: &TuiApp, area: Rect) -> Paragraph<'static> {
 fn render_composer(app: &TuiApp, inner_width: u16) -> Paragraph<'_> {
     let mut lines = Vec::new();
     if let Some(prompt) = app.onboarding_prompt.as_deref() {
-        lines.push(Line::from(vec![
-            Span::styled(format!("{prompt}>"), Style::new().cyan().add_modifier(Modifier::BOLD)),
-        ]));
+        lines.push(Line::from(vec![Span::styled(
+            format!("{prompt}>"),
+            Style::new().cyan().add_modifier(Modifier::BOLD),
+        )]));
         lines.push(Line::from(""));
     }
 
@@ -740,6 +741,9 @@ fn composer_cursor(app: &TuiApp, area: Rect) -> (u16, u16) {
     let y_offset = u16::from(app.onboarding_prompt.is_some()) * 2;
     (
         area.x + cursor_x,
-        area.y + cursor_y.saturating_add(y_offset).min(area.height.saturating_sub(1)),
+        area.y
+            + cursor_y
+                .saturating_add(y_offset)
+                .min(area.height.saturating_sub(1)),
     )
 }

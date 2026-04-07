@@ -11,8 +11,8 @@ use ratatui::layout::{Constraint, Layout, Rect};
 
 use crate::{
     events::{ModelListEntry, SessionListEntry, TranscriptItem, TranscriptItemKind, WorkerEvent},
-    onboarding_config::save_onboarding_config,
     input::InputBuffer,
+    onboarding_config::save_onboarding_config,
     paste_burst::PasteBurst,
     render,
     slash::{matching_slash_commands, SlashCommandSpec},
@@ -545,9 +545,7 @@ impl TuiApp {
             };
             self.onboarding_prompt_history.push(format!(
                 "base url> {}",
-                self.onboarding_selected_base_url
-                    .as_deref()
-                    .unwrap_or("")
+                self.onboarding_selected_base_url.as_deref().unwrap_or("")
             ));
             if let Some(model) = self.onboarding_selected_model.clone() {
                 self.push_item(
@@ -556,8 +554,8 @@ impl TuiApp {
                     format!(
                         "base url> {}",
                         self.onboarding_selected_base_url
-                        .as_deref()
-                        .unwrap_or("(empty)")
+                            .as_deref()
+                            .unwrap_or("(empty)")
                     ),
                 );
                 self.status_message = format!("Base URL saved for {model}");
@@ -1200,7 +1198,12 @@ impl TuiApp {
         let base_url = self.onboarding_selected_base_url.take();
         let api_key = self.onboarding_selected_api_key.take();
 
-        save_onboarding_config(self.provider, &model, base_url.as_deref(), api_key.as_deref())?;
+        save_onboarding_config(
+            self.provider,
+            &model,
+            base_url.as_deref(),
+            api_key.as_deref(),
+        )?;
         self.worker
             .reconfigure_provider(model.clone(), base_url, api_key)?;
         self.model = model.clone();

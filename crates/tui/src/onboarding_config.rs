@@ -26,7 +26,8 @@ pub(crate) fn save_onboarding_config(
             .with_context(|| format!("failed to create {}", parent.display()))?;
     }
     let rendered = toml::to_string_pretty(&root)?;
-    std::fs::write(&path, rendered).with_context(|| format!("failed to write {}", path.display()))?;
+    std::fs::write(&path, rendered)
+        .with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
 }
 
@@ -137,7 +138,10 @@ mod tests {
 
     #[test]
     fn normalized_optional_trims_and_drops_empty_values() {
-        assert_eq!(normalized_optional(Some("  https://example.com  ")), Some("https://example.com"));
+        assert_eq!(
+            normalized_optional(Some("  https://example.com  ")),
+            Some("https://example.com")
+        );
         assert_eq!(normalized_optional(Some("   ")), None);
         assert_eq!(normalized_optional(None), None);
     }
@@ -155,15 +159,27 @@ mod tests {
         .expect("merge");
 
         let table = merged.as_table().expect("table");
-        assert_eq!(table.get("default_provider").and_then(Value::as_str), Some("openai"));
+        assert_eq!(
+            table.get("default_provider").and_then(Value::as_str),
+            Some("openai")
+        );
 
         let profile = table
             .get("openai")
             .and_then(Value::as_table)
             .expect("provider profile");
-        assert_eq!(profile.get("default_model").and_then(Value::as_str), Some("qwen3-coder-next"));
-        assert_eq!(profile.get("base_url").and_then(Value::as_str), Some("https://example.com/v1"));
-        assert_eq!(profile.get("api_key").and_then(Value::as_str), Some("secret"));
+        assert_eq!(
+            profile.get("default_model").and_then(Value::as_str),
+            Some("qwen3-coder-next")
+        );
+        assert_eq!(
+            profile.get("base_url").and_then(Value::as_str),
+            Some("https://example.com/v1")
+        );
+        assert_eq!(
+            profile.get("api_key").and_then(Value::as_str),
+            Some("secret")
+        );
 
         let models = profile
             .get("models")
@@ -185,13 +201,22 @@ mod tests {
         {
             let table = root.as_table_mut().expect("table");
             let mut profile = toml::map::Map::new();
-            profile.insert("models".to_string(), Value::Array(vec![Value::Table({
-                let mut entry = toml::map::Map::new();
-                entry.insert("model".to_string(), Value::String("qwen3-coder-next".to_string()));
-                entry.insert("base_url".to_string(), Value::String("http://old".to_string()));
-                entry.insert("api_key".to_string(), Value::String("old".to_string()));
-                entry
-            })]));
+            profile.insert(
+                "models".to_string(),
+                Value::Array(vec![Value::Table({
+                    let mut entry = toml::map::Map::new();
+                    entry.insert(
+                        "model".to_string(),
+                        Value::String("qwen3-coder-next".to_string()),
+                    );
+                    entry.insert(
+                        "base_url".to_string(),
+                        Value::String("http://old".to_string()),
+                    );
+                    entry.insert("api_key".to_string(), Value::String("old".to_string()));
+                    entry
+                })]),
+            );
             table.insert("openai".to_string(), Value::Table(profile));
         }
 
@@ -213,7 +238,13 @@ mod tests {
             .expect("models array");
         assert_eq!(models.len(), 1);
         let entry = models[0].as_table().expect("model entry");
-        assert_eq!(entry.get("base_url").and_then(Value::as_str), Some("https://new.example/v1"));
-        assert_eq!(entry.get("api_key").and_then(Value::as_str), Some("new-secret"));
+        assert_eq!(
+            entry.get("base_url").and_then(Value::as_str),
+            Some("https://new.example/v1")
+        );
+        assert_eq!(
+            entry.get("api_key").and_then(Value::as_str),
+            Some("new-secret")
+        );
     }
 }

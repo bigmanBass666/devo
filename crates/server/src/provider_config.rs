@@ -228,7 +228,10 @@ fn select_configured_model<'a>(
     }
 }
 
-fn provider_for_model(config: &AppConfigFile, requested_model: Option<&str>) -> Option<ProviderKind> {
+fn provider_for_model(
+    config: &AppConfigFile,
+    requested_model: Option<&str>,
+) -> Option<ProviderKind> {
     let requested_model = requested_model?;
     for (provider, profile) in [
         (ProviderKind::Anthropic, &config.anthropic),

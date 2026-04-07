@@ -465,10 +465,7 @@ async fn ensure_session_started(
     Ok(session.session_id)
 }
 
-async fn spawn_client(
-    cwd: &PathBuf,
-    env: Vec<(String, String)>,
-) -> Result<StdioServerClient> {
+async fn spawn_client(cwd: &PathBuf, env: Vec<(String, String)>) -> Result<StdioServerClient> {
     StdioServerClient::spawn(StdioServerClientConfig {
         program: std::env::current_exe().context("resolve current executable for server launch")?,
         workspace_root: Some(cwd.clone()),
@@ -485,11 +482,7 @@ fn apply_env_override(env: &mut Vec<(String, String)>, key: &str, value: &str) {
     }
 }
 
-fn apply_optional_env_override(
-    env: &mut Vec<(String, String)>,
-    key: &str,
-    value: Option<String>,
-) {
+fn apply_optional_env_override(env: &mut Vec<(String, String)>, key: &str, value: Option<String>) {
     match value {
         Some(value) => apply_env_override(env, key, &value),
         None => env.retain(|(existing_key, _)| existing_key != key),

@@ -110,7 +110,15 @@ pub async fn run_agent(cli: AgentCli, force_onboarding: bool) -> Result<()> {
         let provider = cli
             .provider
             .as_deref()
-            .and_then(|provider| config::resolve_provider_settings(Some(provider), cli.model.as_deref(), &cli.ollama_url, false).ok())
+            .and_then(|provider| {
+                config::resolve_provider_settings(
+                    Some(provider),
+                    cli.model.as_deref(),
+                    &cli.ollama_url,
+                    false,
+                )
+                .ok()
+            })
             .map(|resolved| resolved.provider)
             .unwrap_or(clawcr_core::ProviderKind::Openai);
         let model = cli.model.clone().unwrap_or_else(|| match provider {

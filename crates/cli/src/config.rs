@@ -217,9 +217,7 @@ pub fn resolve_provider_settings(
 
     let provider_name = cli_provider
         .and_then(|provider| parse_provider_kind(provider).ok())
-        .or_else(|| {
-            cli_model.and_then(|model| provider_for_model(&file, model))
-        })
+        .or_else(|| cli_model.and_then(|model| provider_for_model(&file, model)))
         .or(env.default_provider)
         .or(file.default_provider)
         .or_else(|| infer_default_provider(&file));
