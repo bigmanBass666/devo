@@ -384,7 +384,10 @@ async fn onboarding_model_picker_enter_on_builtin_row_prompts_for_connection() {
 
     assert!(!app.onboarding_custom_model_pending);
     assert!(app.onboarding_base_url_pending);
-    assert_eq!(app.onboarding_selected_model.as_deref(), Some("new-anthropic-model"));
+    assert_eq!(
+        app.onboarding_selected_model.as_deref(),
+        Some("new-anthropic-model")
+    );
     assert_eq!(app.onboarding_prompt.as_deref(), Some("base url"));
     assert!(app.aux_panel.is_none());
 }

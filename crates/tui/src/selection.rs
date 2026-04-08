@@ -541,9 +541,7 @@ impl TuiApp {
                 // Only an exact saved model slug should bypass onboarding.
                 // Having other entries in config.toml must not suppress the
                 // connection setup for a newly selected model.
-                if self.show_model_onboarding
-                    && self.saved_model_entry(&selected.slug).is_none()
-                {
+                if self.show_model_onboarding && self.saved_model_entry(&selected.slug).is_none() {
                     self.begin_model_credentials_onboarding(selected.slug.clone());
                     return true;
                 }
