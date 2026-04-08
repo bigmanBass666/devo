@@ -159,4 +159,3 @@ mod worker_events;
 pub async fn run_interactive_tui(config: InteractiveTuiConfig) -> Result<AppExit> {
     TuiApp::run(config).await
 }
-

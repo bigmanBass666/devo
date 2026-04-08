@@ -153,7 +153,11 @@ impl TuiApp {
         transcript_area
     }
 
-    pub(crate) fn handle_terminal_event(&mut self, event: Event, terminal_area: Rect) -> Result<()> {
+    pub(crate) fn handle_terminal_event(
+        &mut self,
+        event: Event,
+        terminal_area: Rect,
+    ) -> Result<()> {
         match event {
             Event::Key(key) if matches!(key.kind, KeyEventKind::Press | KeyEventKind::Repeat) => {
                 // Flush buffered paste text before any navigation or command key so

@@ -71,7 +71,10 @@ pub(crate) fn draw(frame: &mut Frame, app: &TuiApp) {
             Constraint::Length(panel_height),
         ])
         .areas(composer_inner);
-        frame.render_widget(composer::render(app, layout::inner_width(composer_area)), input_area);
+        frame.render_widget(
+            composer::render(app, layout::inner_width(composer_area)),
+            input_area,
+        );
         render_inline_model_panel(frame, app, panel_area, entries);
     } else {
         frame.render_widget(
@@ -107,18 +110,24 @@ pub(crate) fn transcript_height(app: &TuiApp, area: Rect) -> u16 {
 pub(crate) fn composer_height(app: &TuiApp, area: Rect) -> u16 {
     let base_height = composer::line_count(app, layout::inner_width(area))
         .saturating_add(2)
-        .clamp(3, area.height.saturating_sub(1).max(3).min(layout::COMPOSER_MAX_HEIGHT));
+        .clamp(
+            3,
+            area.height
+                .saturating_sub(1)
+                .max(3)
+                .min(layout::COMPOSER_MAX_HEIGHT),
+        );
     base_height
         .saturating_add(
-        app.aux_panel
-            .as_ref()
-            .and_then(|panel| match &panel.content {
-                AuxPanelContent::ModelList(entries) if !app.show_model_onboarding => {
-                    Some(inline_model_panel_height(entries))
-                }
-                _ => None,
-            })
-            .unwrap_or(0),
+            app.aux_panel
+                .as_ref()
+                .and_then(|panel| match &panel.content {
+                    AuxPanelContent::ModelList(entries) if !app.show_model_onboarding => {
+                        Some(inline_model_panel_height(entries))
+                    }
+                    _ => None,
+                })
+                .unwrap_or(0),
         )
         .min(area.height.saturating_sub(1).max(3))
 }
@@ -392,11 +401,7 @@ fn inline_model_panel_entries(app: &TuiApp) -> Option<&[ModelListEntry]> {
 }
 
 fn inline_model_panel_height(entries: &[ModelListEntry]) -> u16 {
-    entries
-        .len()
-        .saturating_mul(2)
-        .saturating_add(1)
-        .min(8) as u16
+    entries.len().saturating_mul(2).saturating_add(1).min(8) as u16
 }
 
 fn render_inline_model_panel(

@@ -216,8 +216,8 @@ async fn run_worker_inner(
     let mut model = config.model;
     let mut active_turn_id: Option<TurnId> = None;
     let mut turn_count = 0usize;
-    let total_input_tokens = 0usize;
-    let total_output_tokens = 0usize;
+    let mut total_input_tokens = 0usize;
+    let mut total_output_tokens = 0usize;
     let mut latest_completed_agent_message: Option<String> = None;
 
     loop {
@@ -350,9 +350,13 @@ async fn run_worker_inner(
                                     session_id: next_session_id.to_string(),
                                     title: result.session.title,
                                     model: result.session.resolved_model,
+                                    total_input_tokens: result.session.total_input_tokens,
+                                    total_output_tokens: result.session.total_output_tokens,
                                     history_items: project_history_items(&result.history_items),
                                     loaded_item_count: result.loaded_item_count,
                                 });
+                                total_input_tokens = result.session.total_input_tokens;
+                                total_output_tokens = result.session.total_output_tokens;
                             }
                             Err(error) => {
                                 let _ = event_tx.send(WorkerEvent::TurnFailed {
@@ -454,6 +458,10 @@ async fn run_worker_inner(
                             "turn/completed" => {
                                 if let ServerEvent::TurnCompleted(payload) = event {
                                     active_turn_id = None;
+                                    if let Some(usage) = &payload.turn.usage {
+                                        total_input_tokens += usage.input_tokens as usize;
+                                        total_output_tokens += usage.output_tokens as usize;
+                                    }
                                     let completed = payload.turn.status == TurnStatus::Completed
                                         || payload.turn.status == TurnStatus::Interrupted;
                                     if completed {
@@ -471,6 +479,10 @@ async fn run_worker_inner(
                             "turn/failed" => {
                                 if let ServerEvent::TurnFailed(TurnEventPayload { turn, .. }) = event {
                                     active_turn_id = None;
+                                    if let Some(usage) = &turn.usage {
+                                        total_input_tokens += usage.input_tokens as usize;
+                                        total_output_tokens += usage.output_tokens as usize;
+                                    }
                                     let message = latest_completed_agent_message
                                         .take()
                                         .unwrap_or_else(|| format!("turn failed with status {:?}", turn.status));
@@ -850,6 +862,8 @@ mod tests {
             title_state: SessionTitleState::Provisional,
             ephemeral: false,
             resolved_model: Some("test-model".to_string()),
+            total_input_tokens: 0,
+            total_output_tokens: 0,
             status: SessionRuntimeStatus::Idle,
         };
         let entry = SessionListEntry {
@@ -877,6 +891,8 @@ mod tests {
             title_state: SessionTitleState::Provisional,
             ephemeral: false,
             resolved_model: Some("test-model".to_string()),
+            total_input_tokens: 0,
+            total_output_tokens: 0,
             status: SessionRuntimeStatus::Idle,
         };
         let entry = SessionListEntry {

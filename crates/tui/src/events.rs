@@ -115,6 +115,10 @@ pub(crate) enum WorkerEvent {
         title: Option<String>,
         /// The model restored from the resumed session, when one exists.
         model: Option<String>,
+        /// Total input tokens accumulated for the resumed session.
+        total_input_tokens: usize,
+        /// Total output tokens accumulated for the resumed session.
+        total_output_tokens: usize,
         /// Replay-friendly transcript items loaded from the resumed session.
         history_items: Vec<TranscriptItem>,
         /// Number of persisted items loaded for the resumed session.

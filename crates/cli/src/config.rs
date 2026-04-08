@@ -228,12 +228,7 @@ pub fn resolve_provider_settings() -> Result<ResolvedProviderSettings> {
                     .map(|model| model.model.clone())
             })
             .or_else(|| env_profile.default_model.clone())
-            .or_else(|| {
-                env_profile
-                    .models
-                    .first()
-                    .map(|model| model.model.clone())
-            })
+            .or_else(|| env_profile.models.first().map(|model| model.model.clone()))
             .unwrap_or_else(|| default_model_for_provider(provider_name));
         let base_url = selected_profile
             .base_url

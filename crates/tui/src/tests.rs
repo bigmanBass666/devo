@@ -323,6 +323,32 @@ async fn onboarding_model_picker_allows_custom_shortcut() {
 }
 
 #[tokio::test]
+async fn onboarding_model_picker_enter_on_custom_row_starts_custom_flow() {
+    let mut app = test_app();
+    app.show_model_onboarding = true;
+    app.show_model_panel();
+    app.aux_panel_selection = app
+        .aux_panel
+        .as_ref()
+        .and_then(|panel| match &panel.content {
+            AuxPanelContent::ModelList(entries) => entries
+                .iter()
+                .position(|entry| entry.is_custom_mode),
+            _ => None,
+        })
+        .expect("custom row should exist");
+
+    app.handle_key(
+        KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE),
+        Rect::default(),
+    );
+
+    assert!(app.onboarding_custom_model_pending);
+    assert_eq!(app.onboarding_prompt.as_deref(), Some("model name"));
+    assert!(app.aux_panel.is_none());
+}
+
+#[tokio::test]
 async fn onboarding_rejects_base_url_without_http_scheme() {
     let mut app = test_app();
     app.onboarding_base_url_pending = true;
@@ -526,6 +552,8 @@ async fn session_switched_event_updates_model_and_transcript() {
         session_id: "00000000-0000-0000-0000-000000000001".to_string(),
         title: Some("Saved session".to_string()),
         model: Some("restored-model".to_string()),
+        total_input_tokens: 42,
+        total_output_tokens: 7,
         history_items: vec![TranscriptItem::new(
             TranscriptItemKind::User,
             "You",
@@ -535,6 +563,8 @@ async fn session_switched_event_updates_model_and_transcript() {
     });
 
     assert_eq!(app.model, "restored-model");
+    assert_eq!(app.total_input_tokens, 42);
+    assert_eq!(app.total_output_tokens, 7);
     assert_eq!(app.transcript.len(), 1);
     assert_eq!(app.transcript[0].kind, TranscriptItemKind::User);
     assert_eq!(app.transcript[0].body, "restored prompt");

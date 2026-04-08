@@ -512,7 +512,11 @@ impl TuiApp {
                 }
                 let selected = models[self.aux_panel_selection.min(models.len() - 1)].clone();
                 if selected.is_custom_mode {
-                    self.start_onboarding();
+                    if self.show_model_onboarding {
+                        self.begin_custom_model_onboarding();
+                    } else {
+                        self.start_onboarding();
+                    }
                     return true;
                 }
                 let Some(saved_model) = self

@@ -141,6 +141,8 @@ impl TuiApp {
                 self.pending_status_index = None;
                 self.pending_assistant_index = None;
                 self.busy = false;
+                self.total_input_tokens = 0;
+                self.total_output_tokens = 0;
                 self.transcript.clear();
                 self.follow_output = true;
                 self.scroll = 0;
@@ -150,12 +152,16 @@ impl TuiApp {
                 session_id,
                 title,
                 model,
+                total_input_tokens,
+                total_output_tokens,
                 history_items,
                 loaded_item_count,
             } => {
                 if let Some(model) = model {
                     self.model = model;
                 }
+                self.total_input_tokens = total_input_tokens;
+                self.total_output_tokens = total_output_tokens;
                 self.aux_panel = None;
                 self.aux_panel_selection = 0;
                 self.pending_status_index = None;
