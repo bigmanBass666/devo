@@ -133,7 +133,7 @@ pub(crate) fn transcript_height(app: &TuiApp, area: Rect) -> u16 {
     let available = area
         .height
         .saturating_sub(composer_height.saturating_add(2));
-    line_count.min(available.max(1))
+    line_count.min(available.max(7))
 }
 
 pub(crate) fn composer_height(app: &TuiApp, area: Rect) -> u16 {
