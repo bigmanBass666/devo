@@ -5,7 +5,8 @@ use std::{
 };
 
 use anyhow::Result;
-use clawcr_core::{BuiltinModelCatalog, ModelCatalog, ProviderKind};
+use clawcr_core::{BuiltinModelCatalog, ModelCatalog};
+use clawcr_provider::ProviderFamily;
 use crossterm::event::{Event, EventStream, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use futures::StreamExt;
 use ratatui::layout::{Constraint, Layout, Rect};
@@ -62,7 +63,7 @@ pub(crate) struct TuiApp {
     /// Model identifier shown in the header.
     pub(crate) model: String,
     /// Provider family currently driving the active session.
-    pub(crate) provider: ProviderKind,
+    pub(crate) provider: ProviderFamily,
     /// Current working directory shown in the header.
     pub(crate) cwd: PathBuf,
     /// Scrollable chat history pane.
@@ -152,7 +153,7 @@ pub struct InteractiveTuiConfig {
     /// Model identifier used for requests and shown in the header.
     pub model: String,
     /// Provider family used for requests and shown in the picker.
-    pub provider: ProviderKind,
+    pub provider: ProviderFamily,
     /// Working directory shown in the header and passed to the session.
     pub cwd: PathBuf,
     /// Environment overrides applied to the spawned stdio server process.

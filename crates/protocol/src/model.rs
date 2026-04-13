@@ -1,26 +1,9 @@
 use std::str::FromStr;
 
+use clawcr_provider::ProviderFamily;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ProviderKind {
-    Anthropic,
-    Openai,
-    Ollama,
-}
-
-impl ProviderKind {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            ProviderKind::Anthropic => "anthropic",
-            ProviderKind::Openai => "openai",
-            ProviderKind::Ollama => "ollama",
-        }
-    }
-}
 
 /// OpenAI models support reasoning effort.
 /// See <https://platform.openai.com/docs/guides/reasoning?api-mode=responses#get-started-with-reasoning>
@@ -233,7 +216,7 @@ impl Default for TruncationPolicyConfig {
 pub struct ModelConfig {
     pub slug: String,
     pub display_name: String,
-    pub provider: ProviderKind,
+    pub provider: ProviderFamily,
     pub description: Option<String>,
     pub default_reasoning_effort: ReasoningEffort,
     pub supported_reasoning_efforts: Vec<ReasoningEffort>,
@@ -255,7 +238,7 @@ impl Default for ModelConfig {
         Self {
             slug: String::new(),
             display_name: String::new(),
-            provider: ProviderKind::Anthropic,
+            provider: ProviderFamily::OpenAI,
             description: None,
             default_reasoning_effort: ReasoningEffort::default(),
             supported_reasoning_efforts: vec![ReasoningEffort::default()],
@@ -366,14 +349,14 @@ mod tests {
 
     use super::{
         InMemoryModelCatalog, InputModality, ModelCatalog, ModelConfig, ModelVisibility,
-        ProviderKind, ReasoningEffort, TruncationPolicyConfig,
+        ProviderFamily, ReasoningEffort, TruncationPolicyConfig,
     };
 
     fn model(slug: &str, priority: i32, visibility: ModelVisibility) -> ModelConfig {
         ModelConfig {
             slug: slug.into(),
             display_name: slug.into(),
-            provider: ProviderKind::Anthropic,
+            provider: ProviderFamily::Anthropic,
             description: None,
             default_reasoning_effort: ReasoningEffort::Medium,
             supported_reasoning_efforts: vec![ReasoningEffort::Medium],

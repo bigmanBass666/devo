@@ -476,6 +476,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clawcr-core",
+ "clawcr-provider",
  "clawcr-server",
  "clawcr-utils",
  "crossterm",

@@ -2,9 +2,10 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use clawcr_core::{
-    BuiltinModelCatalog, ModelConfig, ModelVisibility, ProviderKind, ReasoningEffort, SessionId,
+    BuiltinModelCatalog, ModelConfig, ModelVisibility, ReasoningEffort, SessionId,
     ThinkingCapability,
 };
+use clawcr_provider::ProviderFamily;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use pretty_assertions::assert_eq;
 use ratatui::{Terminal, backend::TestBackend, layout::Rect};
@@ -21,7 +22,7 @@ use crate::{
 fn test_app() -> TuiApp {
     TuiApp {
         model: "test-model".to_string(),
-        provider: ProviderKind::Anthropic,
+        provider: ProviderFamily::Anthropic,
         cwd: PathBuf::from("."),
         transcript: Vec::new(),
         input: InputBuffer::new(),
@@ -40,7 +41,7 @@ fn test_app() -> TuiApp {
         model_catalog: BuiltinModelCatalog::new(vec![ModelConfig {
             slug: "test-model".to_string(),
             display_name: "test-model".to_string(),
-            provider: ProviderKind::Anthropic,
+            provider: ProviderFamily::Anthropic,
             description: None,
             default_reasoning_effort: ReasoningEffort::Medium,
             supported_reasoning_efforts: vec![ReasoningEffort::Low, ReasoningEffort::Medium],
@@ -58,7 +59,7 @@ fn test_app() -> TuiApp {
         }]),
         saved_models: vec![SavedModelEntry {
             model: "test-model".to_string(),
-            provider: ProviderKind::Anthropic,
+            provider: ProviderFamily::Anthropic,
             base_url: None,
             api_key: None,
         }],
@@ -674,14 +675,14 @@ async fn onboarding_model_picker_enter_on_builtin_row_prompts_for_connection() {
     app.show_model_onboarding = true;
     app.saved_models = vec![SavedModelEntry {
         model: "existing-model".to_string(),
-        provider: ProviderKind::Anthropic,
+        provider: ProviderFamily::Anthropic,
         base_url: Some("https://example.invalid/v1".to_string()),
         api_key: Some("secret".to_string()),
     }];
     app.model_catalog = BuiltinModelCatalog::new(vec![ModelConfig {
         slug: "new-anthropic-model".to_string(),
         display_name: "New Anthropic Model".to_string(),
-        provider: ProviderKind::Anthropic,
+        provider: ProviderFamily::Anthropic,
         description: Some("test model".to_string()),
         visibility: ModelVisibility::Visible,
         ..ModelConfig::default()

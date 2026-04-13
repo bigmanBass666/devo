@@ -1,7 +1,8 @@
+use clawcr_provider::ProviderFamily;
 use serde::Deserialize;
 
 use crate::{
-    InputModality, ModelCatalog, ModelConfig, ModelConfigError, ModelVisibility, ProviderKind,
+    InputModality, ModelCatalog, ModelConfig, ModelConfigError, ModelVisibility,
     ReasoningEffort, ThinkingCapability, TruncationPolicyConfig,
 };
 
@@ -87,7 +88,7 @@ pub enum BuiltinModelCatalogError {
 struct RawBuiltinModelConfig {
     slug: String,
     display_name: String,
-    provider: ProviderKind,
+    provider: ProviderFamily,
     #[serde(default)]
     description: String,
     #[serde(
