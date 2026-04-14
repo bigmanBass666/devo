@@ -4,13 +4,13 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 
 use clawcr_provider::{
-    ModelProvider, ProviderFamily, anthropic::AnthropicProvider, openai::OpenAIProvider,
+    ModelProviderSDK, ProviderFamily, anthropic::AnthropicProvider, openai::OpenAIProvider,
 };
 
 /// Resolved provider bootstrap owned by the server runtime.
 pub struct ResolvedServerProvider {
     /// Concrete provider used for model requests.
-    pub provider: std::sync::Arc<dyn ModelProvider>,
+    pub provider: std::sync::Arc<dyn ModelProviderSDK>,
     /// Default model slug used when a session or turn does not request one.
     pub default_model: String,
 }
@@ -108,7 +108,7 @@ pub fn load_server_provider(
         .or_else(|| env_non_empty("ANTHROPIC_AUTH_TOKEN"))
         .or_else(|| env_non_empty("OPENAI_API_KEY"));
 
-    let provider: std::sync::Arc<dyn ModelProvider> = match provider_name {
+    let provider: std::sync::Arc<dyn ModelProviderSDK> = match provider_name {
         ProviderFamily::Anthropic => {
             let api_key = api_key.context("anthropic provider requires an API key")?;
             let base_url = base_url.unwrap_or_else(|| "https://api.anthropic.com".to_string());

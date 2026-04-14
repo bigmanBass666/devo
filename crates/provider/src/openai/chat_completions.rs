@@ -14,7 +14,7 @@ use super::shared::{reasoning_value, request_role, tool_definitions};
 use crate::{
     ModelProviderSDK, ModelRequest, ModelResponse, ProviderAdapter, ProviderCapabilities,
     ProviderFamily, RequestContent, ResponseContent, ResponseExtra, ResponseMetadata, StopReason,
-    StreamEvent, Usage,
+    StreamEvent, Usage, merge_extra_body,
 };
 
 /// OpenAI chat-completion provider backed by the official HTTP API.
@@ -169,6 +169,8 @@ fn build_request(request: &ModelRequest, stream: bool) -> Value {
     if stream {
         root["stream_options"] = json!({ "include_usage": true });
     }
+
+    merge_extra_body(&mut root, request.extra_body.as_ref());
 
     root
 }
@@ -528,6 +530,7 @@ mod tests {
             temperature: Some(0.2),
             sampling: SamplingControls::default(),
             thinking: Some("medium".to_string()),
+            extra_body: None,
         };
 
         let body = build_request(&request, true);
@@ -564,6 +567,7 @@ mod tests {
             temperature: None,
             sampling: SamplingControls::default(),
             thinking: Some("disabled".to_string()),
+            extra_body: None,
         };
 
         let body = build_request(&request, false);
@@ -592,6 +596,7 @@ mod tests {
                 top_k: Some(40),
             },
             thinking: Some("enabled".to_string()),
+            extra_body: None,
         };
 
         let body = build_request(&request, false);

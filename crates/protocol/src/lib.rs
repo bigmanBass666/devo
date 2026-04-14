@@ -5,6 +5,7 @@ mod event;
 mod model;
 mod protocol;
 mod session;
+mod thinking;
 mod truncation;
 mod turn;
 
@@ -15,5 +16,6 @@ pub use event::*;
 pub use model::*;
 pub use protocol::*;
 pub use session::*;
+pub use thinking::*;
 pub use truncation::*;
 pub use turn::*;

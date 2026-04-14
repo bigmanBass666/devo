@@ -12,7 +12,8 @@ use tokio::sync::{Mutex, mpsc};
 
 use clawcr_core::{
     ItemId, Message, QueryEvent, SessionId, SessionTitleFinalSource, SessionTitleState, TextItem,
-    ToolCallItem, ToolResultItem, TurnId, TurnItem, TurnStatus, TurnUsage, Worklog, query,
+    ToolCallItem, ToolResultItem, TurnConfig, TurnId, TurnItem, TurnStatus, TurnUsage, Worklog,
+    query,
 };
 use clawcr_tools::ToolOrchestrator;
 
@@ -291,11 +292,9 @@ impl ServerRuntime {
             RuntimeSession {
                 record,
                 summary: summary.clone(),
-                core_session: Arc::new(Mutex::new(self.deps.new_session_state(
-                    session_id,
-                    params.cwd.clone(),
-                    Some(resolved_model.clone()),
-                ))),
+                core_session: Arc::new(Mutex::new(
+                    self.deps.new_session_state(session_id, params.cwd.clone()),
+                )),
                 active_turn: None,
                 latest_turn: None,
                 loaded_item_count: 0,
@@ -534,9 +533,7 @@ impl ServerRuntime {
             total_output_tokens: source_core_session.total_output_tokens,
             status: SessionRuntimeStatus::Idle,
         };
-        let mut core_session = self
-            .deps
-            .new_session_state(forked_id, fork_cwd, Some(fork_model));
+        let mut core_session = self.deps.new_session_state(forked_id, fork_cwd);
         core_session.messages = source_core_session.messages.clone();
         core_session.turn_count = source_core_session.turn_count;
         core_session.total_input_tokens = source_core_session.total_input_tokens;
@@ -667,23 +664,17 @@ impl ServerRuntime {
                 session.summary.cwd = cwd.clone();
                 session.core_session.lock().await.cwd = cwd;
             }
-            if let Some(model) = params.model.clone() {
-                session.summary.resolved_model = Some(model.clone());
-                let base_instructions = self.deps.base_instructions_for_model(&model);
-                let thinking_selection = self
-                    .deps
-                    .model_catalog
-                    .get(&model)
-                    .and_then(clawcr_core::ModelPreset::default_thinking_selection);
-                let mut core_session = session.core_session.lock().await;
-                core_session.config.model = model;
-                core_session.config.base_instructions = base_instructions;
-                core_session.config.thinking_selection = thinking_selection;
-            }
-            if let Some(thinking_selection) = params.thinking.clone() {
-                session.core_session.lock().await.config.thinking_selection =
-                    Some(thinking_selection);
-            }
+            let requested_model = params
+                .model
+                .as_deref()
+                .or(session.summary.resolved_model.as_deref());
+            let turn_config = self
+                .deps
+                .resolve_turn_config(requested_model, params.thinking.clone());
+            let resolved_request = turn_config
+                .model
+                .resolve_thinking_selection(turn_config.thinking_selection.as_deref());
+            session.summary.resolved_model = Some(turn_config.model.slug.clone());
             let turn = TurnSummary {
                 turn_id: TurnId::new(),
                 session_id: params.session_id,
@@ -692,11 +683,7 @@ impl ServerRuntime {
                     .as_ref()
                     .map_or(1, |turn| turn.sequence + 1),
                 status: TurnStatus::Running,
-                model_slug: session
-                    .summary
-                    .resolved_model
-                    .clone()
-                    .unwrap_or_else(|| self.deps.default_model.clone()),
+                model_slug: resolved_request.request_model,
                 started_at: now,
                 completed_at: None,
                 usage: None,
@@ -708,9 +695,15 @@ impl ServerRuntime {
             let runtime = Arc::clone(self);
             let turn_for_task = turn.clone();
             let input_for_task = input_text.clone();
+            let turn_config_for_task = turn_config.clone();
             let task = tokio::spawn(async move {
                 runtime
-                    .execute_turn(params.session_id, turn_for_task, input_for_task)
+                    .execute_turn(
+                        params.session_id,
+                        turn_for_task,
+                        turn_config_for_task,
+                        input_for_task,
+                    )
                     .await;
             });
             self.active_tasks
@@ -985,6 +978,7 @@ impl ServerRuntime {
         self: Arc<Self>,
         session_id: SessionId,
         turn: TurnSummary,
+        turn_config: TurnConfig,
         input: String,
     ) {
         self.emit_text_item(
@@ -1209,6 +1203,7 @@ impl ServerRuntime {
             let orchestrator = ToolOrchestrator::new(Arc::clone(&registry));
             let result = query(
                 &mut core_session,
+                &turn_config,
                 self.deps.provider.as_ref(),
                 registry,
                 &orchestrator,
@@ -1408,7 +1403,7 @@ impl ServerRuntime {
         let response = match self
             .deps
             .provider
-            .complete(build_title_generation_request(
+            .completion(build_title_generation_request(
                 model,
                 first_user_input,
                 first_assistant_reply,

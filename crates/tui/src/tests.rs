@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::time::Instant;
 
-use clawcr_core::{ModelPreset, PresetModelCatalog, SessionId};
+use clawcr_core::{Model, PresetModelCatalog, SessionId};
 use clawcr_provider::ProviderFamily;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use pretty_assertions::assert_eq;
@@ -35,12 +35,12 @@ fn test_app() -> TuiApp {
         pending_status_index: None,
         pending_assistant_index: None,
         worker: QueryWorkerHandle::stub(),
-        model_catalog: PresetModelCatalog::new(vec![ModelPreset {
+        model_catalog: PresetModelCatalog::new(vec![Model {
             slug: "test-model".to_string(),
             display_name: "Test Model".to_string(),
             provider_family: ProviderFamily::Anthropic,
             thinking_capability: clawcr_core::ThinkingCapability::Toggle,
-            ..ModelPreset::default()
+            ..Model::default()
         }]),
         saved_models: vec![],
         show_model_onboarding: false,
@@ -659,12 +659,12 @@ async fn onboarding_model_picker_enter_on_builtin_row_prompts_for_connection() {
         base_url: Some("https://example.invalid/v1".to_string()),
         api_key: Some("secret".to_string()),
     }];
-    app.model_catalog = PresetModelCatalog::new(vec![ModelPreset {
+    app.model_catalog = PresetModelCatalog::new(vec![Model {
         slug: "new-anthropic-model".to_string(),
         display_name: "New Anthropic Model".to_string(),
         provider_family: ProviderFamily::Anthropic,
         description: Some("test model".to_string()),
-        ..ModelPreset::default()
+        ..Model::default()
     }]);
     app.show_model_panel();
     app.aux_panel_selection = app

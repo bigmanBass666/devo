@@ -55,6 +55,7 @@ pub(crate) fn build_title_generation_request(
         temperature: Some(0.0),
         sampling: SamplingControls::default(),
         thinking: None,
+        extra_body: None,
     }
 }
 

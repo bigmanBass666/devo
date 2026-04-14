@@ -11,7 +11,7 @@ use tracing::debug;
 
 use crate::{
     ModelProviderSDK, ModelRequest, ModelResponse, RequestContent, ResponseContent, ResponseExtra,
-    ResponseMetadata, StopReason, StreamEvent, Usage,
+    ResponseMetadata, StopReason, StreamEvent, Usage, merge_extra_body,
 };
 
 use super::capabilities::{OpenAITransport, resolve_request_profile};
@@ -102,6 +102,8 @@ fn build_request(request: &ModelRequest, stream: bool) -> Value {
     if stream {
         root["stream_options"] = json!({ "include_usage": true });
     }
+
+    merge_extra_body(&mut root, request.extra_body.as_ref());
 
     root
 }
@@ -507,6 +509,7 @@ mod tests {
                 top_k: Some(12),
             },
             thinking: Some("medium".to_string()),
+            extra_body: None,
         };
 
         let body = build_request(&request, true);

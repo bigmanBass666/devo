@@ -1,19 +1,13 @@
 use std::path::PathBuf;
 
-use crate::ReasoningEffort;
 use clawcr_safety::legacy_permissions::PermissionMode;
 
-use crate::{Message, TokenBudget};
+use crate::{Message, Model, TokenBudget};
 
 /// Configuration for a session.
 #[derive(Debug, Clone)]
 pub struct SessionConfig {
-    pub model: String,
-    pub base_instructions: String,
-    pub reasoning_effort: ReasoningEffort,
-    pub thinking_selection: Option<String>,
     pub system_prompt: String,
-    pub max_turns: usize,
     pub token_budget: TokenBudget,
     pub permission_mode: PermissionMode,
 }
@@ -21,16 +15,18 @@ pub struct SessionConfig {
 impl Default for SessionConfig {
     fn default() -> Self {
         Self {
-            model: "claude-sonnet-4-20250514".to_string(),
-            base_instructions: String::new(),
-            reasoning_effort: ReasoningEffort::default(),
-            thinking_selection: None,
             system_prompt: String::new(),
-            max_turns: 100,
             token_budget: TokenBudget::default(),
             permission_mode: PermissionMode::AutoApprove,
         }
     }
+}
+
+/// Per-turn execution settings resolved before the query loop starts.
+#[derive(Debug, Clone)]
+pub struct TurnConfig {
+    pub model: Model,
+    pub thinking_selection: Option<String>,
 }
 
 /// Mutable state for one conversation session.
@@ -87,12 +83,7 @@ mod tests {
     #[test]
     fn session_config_default_values() {
         let config = SessionConfig::default();
-        assert_eq!(config.model, "claude-sonnet-4-20250514");
-        assert!(config.base_instructions.is_empty());
-        assert_eq!(config.reasoning_effort, ReasoningEffort::Medium);
-        assert_eq!(config.thinking_selection, None);
         assert!(config.system_prompt.is_empty());
-        assert_eq!(config.max_turns, 100);
         assert_eq!(config.permission_mode, PermissionMode::AutoApprove);
     }
 

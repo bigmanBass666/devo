@@ -137,20 +137,4 @@ pub trait ModelProviderSDK: Send + Sync {
 
     /// Human-readable provider name (e.g. "anthropic", "openai").
     fn name(&self) -> &str;
-
-    /// Backward-compatible alias for `completion`.
-    async fn complete(&self, request: ModelRequest) -> anyhow::Result<ModelResponse> {
-        self.completion(request).await
-    }
-
-    /// Backward-compatible alias for `completion_stream`.
-    async fn stream(
-        &self,
-        request: ModelRequest,
-    ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<StreamEvent>> + Send>>> {
-        self.completion_stream(request).await
-    }
 }
-
-/// Backward-compatible alias for the provider SDK trait.
-pub use ModelProviderSDK as ModelProvider;

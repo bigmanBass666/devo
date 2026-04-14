@@ -2,6 +2,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 /// A normalized message role used by provider adapters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -104,6 +105,25 @@ pub struct ModelRequest {
     pub sampling: SamplingControls,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_body: Option<Value>,
+}
+
+/// Merges an extra JSON object into a provider request body.
+pub fn merge_extra_body(body: &mut Value, extra_body: Option<&Value>) {
+    let Some(extra_body) = extra_body else {
+        return;
+    };
+    let Some(body_object) = body.as_object_mut() else {
+        return;
+    };
+    let Some(extra_object) = extra_body.as_object() else {
+        return;
+    };
+
+    for (key, value) in extra_object {
+        body_object.insert(key.clone(), value.clone());
+    }
 }
 
 /// Sampling controls and model-selection hints shared across adapters.
@@ -185,6 +205,7 @@ mod tests {
             temperature: None,
             sampling: SamplingControls::default(),
             thinking: None,
+            extra_body: None,
         };
         let json = serde_json::to_string(&req).unwrap();
         assert!(!json.contains("tools"));
@@ -192,6 +213,29 @@ mod tests {
         let deserialized: ModelRequest = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.model, "claude-sonnet-4-20250514");
         assert_eq!(deserialized.messages.len(), 1);
+    }
+
+    #[test]
+    fn merge_extra_body_overrides_existing_fields() {
+        let mut body = json!({
+            "model": "base-model",
+            "temperature": 0.2
+        });
+        let extra = json!({
+            "temperature": 0.8,
+            "top_k": 32
+        });
+
+        merge_extra_body(&mut body, Some(&extra));
+
+        assert_eq!(
+            body,
+            json!({
+                "model": "base-model",
+                "temperature": 0.8,
+                "top_k": 32
+            })
+        );
     }
 
     #[test]

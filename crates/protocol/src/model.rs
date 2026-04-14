@@ -1,158 +1,28 @@
-use std::str::FromStr;
-
+//! Runtime model types shared across core, server, and clients.
+//!
+//! Main focus:
+//! - represent the resolved model shape used during execution
+//! - expose model capabilities needed by UI, request building, and turn resolution
+//! - provide the read-only catalog trait over runtime `Model` values
+//!
+//! Design:
+//! - `Model` is the cross-crate runtime type, not the raw config/catalog input type
+//! - this module keeps behavior that belongs to the executable model itself, such as
+//!   thinking resolution and effective defaults
+//! - callers should be able to use this type without knowing how the model catalog was loaded
+//!
+//! Boundary:
+//! - this module must not own bundled JSON loading or compatibility parsing for catalog files
+//! - raw preset/config concerns live in `clawcr-core`
+//! - this module describes runtime state and runtime-facing interfaces only
+//!
 use clawcr_provider::ProviderFamily;
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumIter};
 
-use crate::truncation::TruncationPolicyConfig;
-
-/// OpenAI models support reasoning effort.
-/// See <https://platform.openai.com/docs/guides/reasoning?api-mode=responses#get-started-with-reasoning>
-#[derive(
-    Debug,
-    Serialize,
-    Deserialize,
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Display,
-    JsonSchema,
-    EnumIter,
-    Hash,
-)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum ReasoningEffort {
-    None,
-    Minimal,
-    Low,
-    #[default]
-    Medium,
-    High,
-    XHigh,
-}
-
-impl FromStr for ReasoningEffort {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_value(serde_json::Value::String(s.to_string()))
-            .map_err(|_| format!("invalid reasoning_effort: {s}"))
-    }
-}
-
-impl ReasoningEffort {
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::None => "None",
-            Self::Minimal => "Minimal",
-            Self::Low => "Low",
-            Self::Medium => "Medium",
-            Self::High => "High",
-            Self::XHigh => "XHigh",
-        }
-    }
-
-    pub fn description(self) -> &'static str {
-        match self {
-            Self::None => "Disable extra reasoning effort",
-            Self::Minimal => "Use the lightest supported reasoning effort",
-            Self::Low => "Fastest, cheapest, least deliberative",
-            Self::Medium => "Balanced speed and deliberation",
-            Self::High => "More deliberate for harder tasks",
-            Self::XHigh => "Most deliberate, highest effort",
-        }
-    }
-}
-
-/// Maps reasoning efforts onto a stable numeric scale for comparison.
-fn effort_rank(effort: ReasoningEffort) -> i32 {
-    match effort {
-        ReasoningEffort::None => 0,
-        ReasoningEffort::Minimal => 1,
-        ReasoningEffort::Low => 2,
-        ReasoningEffort::Medium => 3,
-        ReasoningEffort::High => 4,
-        ReasoningEffort::XHigh => 5,
-    }
-}
-
-/// Picks the supported effort closest to the requested one.
-fn nearest_effort(target: ReasoningEffort, supported: &[ReasoningEffort]) -> ReasoningEffort {
-    let target_rank = effort_rank(target);
-    supported
-        .iter()
-        .copied()
-        .min_by_key(|candidate| (effort_rank(*candidate) - target_rank).abs())
-        .unwrap_or(target)
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-/// One selectable reasoning-effort option presented to the UI or protocol client.
-pub struct ReasoningEffortPreset {
-    pub effort: ReasoningEffort,
-    pub description: String,
-}
-
-impl ReasoningEffortPreset {
-    pub fn new(effort: ReasoningEffort, description: impl Into<String>) -> Self {
-        Self {
-            effort,
-            description: description.into(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-/// One selectable thinking option presented to the UI or protocol client.
-pub struct ThinkingPreset {
-    pub label: String,
-    pub description: String,
-    pub value: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ThinkingCapability {
-    /// Model thinking cannot be controlled.
-    Disabled,
-    /// Model thinking can be toggled on and off.
-    Toggle,
-    /// Multiple effort levels can be selected for thinking.
-    Levels(Vec<ReasoningEffort>),
-}
-
-impl ThinkingCapability {
-    pub fn options(&self) -> Vec<ThinkingPreset> {
-        match self {
-            ThinkingCapability::Disabled => Vec::new(),
-            ThinkingCapability::Toggle => vec![
-                ThinkingPreset {
-                    label: "Off".to_string(),
-                    description: "Disable thinking for this turn".to_string(),
-                    value: "disabled".to_string(),
-                },
-                ThinkingPreset {
-                    label: "On".to_string(),
-                    description: "Enable the model's thinking mode".to_string(),
-                    value: "enabled".to_string(),
-                },
-            ],
-            ThinkingCapability::Levels(levels) => levels
-                .iter()
-                .copied()
-                .map(|effort| ThinkingPreset {
-                    label: effort.label().to_string(),
-                    description: effort.description().to_string(),
-                    value: effort.label().to_lowercase(),
-                })
-                .collect(),
-        }
-    }
-}
+use crate::{
+    ReasoningEffort, ReasoningEffortPreset, ResolvedThinkingRequest, ThinkingCapability,
+    ThinkingImplementation, nearest_effort, truncation::TruncationPolicyConfig,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -186,8 +56,8 @@ impl Default for InputModality {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
-/// Static metadata and capability flags for one model in the catalog.
-pub struct ModelPreset {
+/// Resolved runtime model metadata used across core, server, and clients.
+pub struct Model {
     /// Stable model identifier used in config and requests. such as `claude-sonnet-20250425`
     pub slug: String,
     /// Human-readable display name shown in the UI. such as `claude-sonnet-4.6`
@@ -195,42 +65,25 @@ pub struct ModelPreset {
     /// Provider family that serves this model.
     pub provider_family: ProviderFamily,
     /// Optional short description of the model.
-    #[serde(default, deserialize_with = "deserialize_optional_string")]
     pub description: Option<String>,
     /// Thinking control available for this model.
-    #[serde(
-        default = "default_thinking_capability",
-        deserialize_with = "deserialize_thinking_capability"
-    )]
     pub thinking_capability: ThinkingCapability,
     /// Default reasoning effort selected for the model when no levels are exposed.
-    #[serde(
-        default = "default_reasoning_effort",
-        alias = "default_reasoning_level",
-        deserialize_with = "deserialize_reasoning_effort_option"
-    )]
     pub default_reasoning_effort: Option<ReasoningEffort>,
+    /// How the selected thinking mode should be applied to requests.
+    pub thinking_implementation: Option<ThinkingImplementation>,
     /// Base system instructions bundled with the model.
     pub base_instructions: String,
     /// Maximum context window in tokens.
-    #[serde(default = "default_context_window")]
     pub context_window: u32,
     /// Percentage of the context window treated as effectively usable.
     pub effective_context_window_percent: Option<u8>,
     /// Policy used when truncating content for requests.
-    #[serde(
-        default,
-        deserialize_with = "crate::truncation::deserialize_truncation_policy_config"
-    )]
     pub truncation_policy: TruncationPolicyConfig,
     /// Input types accepted by the model.
-    #[serde(default = "default_input_modalities")]
     pub input_modalities: Vec<InputModality>,
     /// Whether the model supports original-resolution image detail.
     pub supports_image_detail_original: bool,
-    /// Whether the user configured API access for this model.
-    #[serde(rename = "supported_in_api")]
-    pub api_configured: bool,
     /// Default temperature to use when the model does not override it.
     pub temperature: Option<f32>,
     /// Default nucleus sampling value to use when the model does not override it.
@@ -239,11 +92,9 @@ pub struct ModelPreset {
     pub top_k: Option<f32>,
     /// Default maximum token limit for responses from this model.
     pub max_tokens: Option<u32>,
-    /// Relative priority used when choosing a default visible model.
-    pub priority: i32,
 }
 
-impl Default for ModelPreset {
+impl Default for Model {
     fn default() -> Self {
         Self {
             slug: String::new(),
@@ -252,23 +103,22 @@ impl Default for ModelPreset {
             description: None,
             thinking_capability: ThinkingCapability::Disabled,
             default_reasoning_effort: Some(ReasoningEffort::default()),
+            thinking_implementation: None,
             base_instructions: String::new(),
             context_window: 200_000,
             effective_context_window_percent: None,
             truncation_policy: TruncationPolicyConfig::default(),
             input_modalities: vec![InputModality::default()],
             supports_image_detail_original: false,
-            api_configured: false,
             temperature: None,
             top_p: None,
             top_k: None,
             max_tokens: None,
-            priority: 0,
         }
     }
 }
 
-impl ModelPreset {
+impl Model {
     pub fn reasoning_effort_options(&self) -> Vec<ReasoningEffortPreset> {
         match &self.thinking_capability {
             ThinkingCapability::Levels(levels) => levels
@@ -287,6 +137,16 @@ impl ModelPreset {
 
     pub fn effective_thinking_capability(&self) -> ThinkingCapability {
         self.thinking_capability.clone()
+    }
+
+    pub fn effective_thinking_implementation(&self) -> ThinkingImplementation {
+        self.thinking_implementation.clone().unwrap_or_else(|| {
+            if matches!(self.thinking_capability, ThinkingCapability::Disabled) {
+                ThinkingImplementation::Disabled
+            } else {
+                ThinkingImplementation::RequestParameter
+            }
+        })
     }
 
     pub fn effective_context_window_percent(&self) -> u8 {
@@ -312,114 +172,128 @@ impl ModelPreset {
             _ => self.default_reasoning_effort.unwrap_or(target),
         }
     }
-}
 
-fn default_reasoning_effort() -> Option<ReasoningEffort> {
-    Some(ReasoningEffort::default())
-}
+    pub fn resolve_thinking_selection(&self, selection: Option<&str>) -> ResolvedThinkingRequest {
+        let normalized_selection = selection
+            .map(str::trim)
+            .filter(|selection| !selection.is_empty())
+            .map(|selection| selection.to_ascii_lowercase())
+            .or_else(|| self.default_thinking_selection());
 
-fn default_context_window() -> u32 {
-    200_000
-}
-
-fn default_input_modalities() -> Vec<InputModality> {
-    vec![InputModality::Text, InputModality::Image]
-}
-
-fn default_thinking_capability() -> ThinkingCapability {
-    ThinkingCapability::Disabled
-}
-
-fn deserialize_optional_string<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let value = Option::<String>::deserialize(deserializer)?;
-    Ok(value.and_then(|value| {
-        let trimmed = value.trim();
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(value)
+        match self.effective_thinking_implementation() {
+            ThinkingImplementation::Disabled => ResolvedThinkingRequest {
+                request_model: self.slug.clone(),
+                request_thinking: None,
+                effective_reasoning_effort: None,
+                extra_body: None,
+            },
+            ThinkingImplementation::RequestParameter => {
+                let request_thinking = match self.effective_thinking_capability() {
+                    ThinkingCapability::Disabled => None,
+                    ThinkingCapability::Toggle => normalized_selection
+                        .filter(|selection| selection == "enabled" || selection == "disabled"),
+                    ThinkingCapability::Levels(_) => normalized_selection.map(|selection| {
+                        let parsed = selection
+                            .parse::<ReasoningEffort>()
+                            .ok()
+                            .map(|effort| self.nearest_supported_reasoning_effort(effort))
+                            .unwrap_or_else(|| self.default_reasoning_effort.unwrap_or_default());
+                        parsed.label().to_lowercase()
+                    }),
+                };
+                let effective_reasoning_effort = request_thinking
+                    .as_deref()
+                    .and_then(|selection| selection.parse::<ReasoningEffort>().ok())
+                    .or(self.default_reasoning_effort);
+                ResolvedThinkingRequest {
+                    request_model: self.slug.clone(),
+                    request_thinking,
+                    effective_reasoning_effort,
+                    extra_body: None,
+                }
+            }
+            ThinkingImplementation::ModelVariant(config) => {
+                let selected_variant = normalized_selection
+                    .as_deref()
+                    .and_then(|selection| {
+                        config
+                            .variants
+                            .iter()
+                            .find(|variant| variant.selection_value.eq_ignore_ascii_case(selection))
+                    })
+                    .or_else(|| {
+                        self.default_thinking_selection()
+                            .as_deref()
+                            .and_then(|selection| {
+                                config.variants.iter().find(|variant| {
+                                    variant.selection_value.eq_ignore_ascii_case(selection)
+                                })
+                            })
+                    })
+                    .or_else(|| config.variants.first());
+                if let Some(variant) = selected_variant {
+                    ResolvedThinkingRequest {
+                        request_model: variant.model_slug.clone(),
+                        request_thinking: None,
+                        effective_reasoning_effort: variant.reasoning_effort,
+                        extra_body: None,
+                    }
+                } else {
+                    ResolvedThinkingRequest {
+                        request_model: self.slug.clone(),
+                        request_thinking: None,
+                        effective_reasoning_effort: self.default_reasoning_effort,
+                        extra_body: None,
+                    }
+                }
+            }
         }
-    }))
-}
-
-fn deserialize_reasoning_effort_option<'de, D>(
-    deserializer: D,
-) -> Result<Option<ReasoningEffort>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let value = serde_json::Value::deserialize(deserializer)?;
-    match value {
-        serde_json::Value::Null => Ok(default_reasoning_effort()),
-        serde_json::Value::String(text) if text.trim().is_empty() => Ok(default_reasoning_effort()),
-        other => serde_json::from_value(other)
-            .map(Some)
-            .map_err(serde::de::Error::custom),
     }
 }
 
-fn deserialize_thinking_capability<'de, D>(deserializer: D) -> Result<ThinkingCapability, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let value = serde_json::Value::deserialize(deserializer)?;
-    match value {
-        serde_json::Value::Null => Ok(default_thinking_capability()),
-        serde_json::Value::String(text) if text.trim().is_empty() => {
-            Ok(default_thinking_capability())
-        }
-        other => serde_json::from_value(other).map_err(serde::de::Error::custom),
-    }
-}
-
-/// Provides read-only access to model definitions and turn-resolution behavior.
+/// Provides read-only access to resolved runtime model definitions.
 pub trait ModelCatalog: Send + Sync {
-    fn list_visible(&self) -> Vec<&ModelPreset>;
-    fn get(&self, slug: &str) -> Option<&ModelPreset>;
-    fn resolve_for_turn(&self, requested: Option<&str>) -> Result<&ModelPreset, ModelPresetError>;
+    fn list_visible(&self) -> Vec<&Model>;
+    fn get(&self, slug: &str) -> Option<&Model>;
+    fn resolve_for_turn(&self, requested: Option<&str>) -> Result<&Model, ModelError>;
 }
 
 #[derive(Debug, Clone)]
 pub struct InMemoryModelCatalog {
-    models: Vec<ModelPreset>,
+    models: Vec<Model>,
 }
 
 impl InMemoryModelCatalog {
-    pub fn new(models: Vec<ModelPreset>) -> Self {
+    pub fn new(models: Vec<Model>) -> Self {
         Self { models }
     }
 }
 
 impl ModelCatalog for InMemoryModelCatalog {
-    fn list_visible(&self) -> Vec<&ModelPreset> {
+    fn list_visible(&self) -> Vec<&Model> {
         self.models.iter().collect()
     }
 
-    fn get(&self, slug: &str) -> Option<&ModelPreset> {
+    fn get(&self, slug: &str) -> Option<&Model> {
         self.models.iter().find(|model| model.slug == slug)
     }
 
-    fn resolve_for_turn(&self, requested: Option<&str>) -> Result<&ModelPreset, ModelPresetError> {
+    fn resolve_for_turn(&self, requested: Option<&str>) -> Result<&Model, ModelError> {
         if let Some(slug) = requested {
-            return self
-                .get(slug)
-                .ok_or_else(|| ModelPresetError::ModelNotFound {
-                    slug: slug.to_string(),
-                });
+            return self.get(slug).ok_or_else(|| ModelError::ModelNotFound {
+                slug: slug.to_string(),
+            });
         }
 
         self.list_visible()
             .into_iter()
-            .max_by_key(|model| model.priority)
-            .ok_or(ModelPresetError::NoVisibleModels)
+            .next()
+            .ok_or(ModelError::NoVisibleModels)
     }
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub enum ModelPresetError {
+pub enum ModelError {
     #[error("model not found: {slug}")]
     ModelNotFound { slug: String },
     #[error("no visible models available")]
@@ -428,21 +302,23 @@ pub enum ModelPresetError {
 
 #[cfg(test)]
 mod tests {
+    use crate::{ThinkingVariant, ThinkingVariantConfig};
     use pretty_assertions::assert_eq;
 
     use super::{
-        InMemoryModelCatalog, InputModality, ModelCatalog, ModelPreset, ProviderFamily,
-        ReasoningEffort, ThinkingCapability, TruncationPolicyConfig,
+        InMemoryModelCatalog, InputModality, Model, ModelCatalog, ProviderFamily, ReasoningEffort,
+        ThinkingCapability, ThinkingImplementation, TruncationPolicyConfig,
     };
 
-    fn model(slug: &str, priority: i32) -> ModelPreset {
-        ModelPreset {
+    fn model(slug: &str) -> Model {
+        Model {
             slug: slug.into(),
             display_name: slug.into(),
             provider_family: ProviderFamily::Anthropic,
             description: None,
             thinking_capability: ThinkingCapability::Disabled,
             default_reasoning_effort: Some(ReasoningEffort::Medium),
+            thinking_implementation: None,
             base_instructions: String::new(),
             context_window: 200_000,
             effective_context_window_percent: None,
@@ -452,8 +328,6 @@ mod tests {
             },
             input_modalities: vec![InputModality::Text],
             supports_image_detail_original: false,
-            api_configured: true,
-            priority,
             temperature: None,
             top_p: None,
             top_k: None,
@@ -463,10 +337,110 @@ mod tests {
 
     #[test]
     fn resolve_for_turn_honors_requested_slug() {
-        let catalog = InMemoryModelCatalog::new(vec![model("test", 1)]);
+        let catalog = InMemoryModelCatalog::new(vec![model("test")]);
         let resolved = catalog
             .resolve_for_turn(Some("test"))
             .expect("resolve explicit");
         assert_eq!(resolved.slug, "test");
+    }
+
+    #[test]
+    fn resolve_thinking_selection_disables_request_thinking_when_capability_is_disabled() {
+        let preset = model("test");
+
+        let resolved = preset.resolve_thinking_selection(Some("enabled"));
+
+        assert_eq!(resolved.request_model, "test");
+        assert_eq!(resolved.request_thinking, None);
+        assert_eq!(resolved.effective_reasoning_effort, None);
+    }
+
+    #[test]
+    fn resolve_thinking_selection_uses_request_parameter_for_toggle_models() {
+        let mut preset = model("glm-5.1");
+        preset.thinking_capability = ThinkingCapability::Toggle;
+
+        let resolved = preset.resolve_thinking_selection(Some("disabled"));
+
+        assert_eq!(resolved.request_model, "glm-5.1");
+        assert_eq!(resolved.request_thinking, Some(String::from("disabled")));
+        assert_eq!(
+            resolved.effective_reasoning_effort,
+            Some(ReasoningEffort::Medium)
+        );
+    }
+
+    #[test]
+    fn resolve_thinking_selection_snaps_effort_for_level_models() {
+        let mut preset = model("o-model");
+        preset.thinking_capability =
+            ThinkingCapability::Levels(vec![ReasoningEffort::Low, ReasoningEffort::High]);
+        preset.default_reasoning_effort = Some(ReasoningEffort::Low);
+
+        let resolved = preset.resolve_thinking_selection(Some("medium"));
+
+        assert_eq!(resolved.request_model, "o-model");
+        assert_eq!(resolved.request_thinking, Some(String::from("low")));
+        assert_eq!(
+            resolved.effective_reasoning_effort,
+            Some(ReasoningEffort::Low)
+        );
+    }
+
+    #[test]
+    fn resolve_thinking_selection_uses_model_variants_when_configured() {
+        let mut preset = model("kimi-k2.5");
+        preset.thinking_capability = ThinkingCapability::Toggle;
+        preset.thinking_implementation = Some(ThinkingImplementation::ModelVariant(
+            ThinkingVariantConfig {
+                variants: vec![
+                    ThinkingVariant {
+                        selection_value: String::from("disabled"),
+                        model_slug: String::from("kimi-k2.5"),
+                        reasoning_effort: None,
+                        label: String::from("Off"),
+                        description: String::from("Use the standard model"),
+                    },
+                    ThinkingVariant {
+                        selection_value: String::from("enabled"),
+                        model_slug: String::from("kimi-k2.5-thinking"),
+                        reasoning_effort: Some(ReasoningEffort::Medium),
+                        label: String::from("On"),
+                        description: String::from("Use the thinking model"),
+                    },
+                ],
+            },
+        ));
+
+        let resolved = preset.resolve_thinking_selection(Some("enabled"));
+
+        assert_eq!(resolved.request_model, "kimi-k2.5-thinking");
+        assert_eq!(resolved.request_thinking, None);
+        assert_eq!(
+            resolved.effective_reasoning_effort,
+            Some(ReasoningEffort::Medium)
+        );
+    }
+
+    #[test]
+    fn resolve_thinking_selection_falls_back_to_first_variant_when_selection_is_invalid() {
+        let mut preset = model("deepseek-chat");
+        preset.thinking_capability = ThinkingCapability::Toggle;
+        preset.thinking_implementation = Some(ThinkingImplementation::ModelVariant(
+            ThinkingVariantConfig {
+                variants: vec![ThinkingVariant {
+                    selection_value: String::from("disabled"),
+                    model_slug: String::from("deepseek-chat"),
+                    reasoning_effort: None,
+                    label: String::from("Off"),
+                    description: String::from("Use the standard model"),
+                }],
+            },
+        ));
+
+        let resolved = preset.resolve_thinking_selection(Some("invalid"));
+
+        assert_eq!(resolved.request_model, "deepseek-chat");
+        assert_eq!(resolved.request_thinking, None);
     }
 }

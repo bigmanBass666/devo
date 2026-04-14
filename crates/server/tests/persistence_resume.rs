@@ -10,7 +10,7 @@ use tokio::time::{Duration, timeout};
 
 use clawcr_core::PresetModelCatalog;
 use clawcr_provider::{
-    ModelProvider, ModelRequest, ModelResponse, ResponseContent, ResponseMetadata, StopReason,
+    ModelProviderSDK, ModelRequest, ModelResponse, ResponseContent, ResponseMetadata, StopReason,
     StreamEvent, Usage,
 };
 use clawcr_server::{ClientTransportKind, ServerRuntime, ServerRuntimeDependencies};
@@ -19,7 +19,7 @@ use clawcr_tools::ToolRegistry;
 struct SingleReplyProvider;
 
 #[async_trait]
-impl ModelProvider for SingleReplyProvider {
+impl ModelProviderSDK for SingleReplyProvider {
     async fn completion(&self, _request: ModelRequest) -> Result<ModelResponse> {
         Ok(ModelResponse {
             id: "title-1".into(),
