@@ -13,7 +13,7 @@ use super::AnthropicAIRole;
 use crate::{
     ModelProviderSDK, ModelRequest, ModelResponse, ProviderAdapter, ProviderCapabilities,
     ProviderFamily, RequestContent, ResponseContent, ResponseMetadata, StopReason, StreamEvent,
-    Usage,
+    Usage, merge_extra_body,
 };
 
 /// <https://platform.claude.com/docs/en/api/messages>
@@ -367,6 +367,8 @@ fn build_request(request: &ModelRequest, stream: bool) -> Value {
     if let Some(thinking) = request.thinking.as_deref().and_then(build_thinking) {
         root["thinking"] = thinking;
     }
+
+    merge_extra_body(&mut root, request.extra_body.as_ref());
 
     root
 }

@@ -6,11 +6,11 @@ use serde_json::json;
 use tracing::{debug, info, info_span, warn};
 
 use clawcr_provider::{
-    ModelProvider, ModelRequest, ResponseContent, SamplingControls, StopReason, StreamEvent,
+    ModelProviderSDK, ModelRequest, ResponseContent, SamplingControls, StopReason, StreamEvent,
 };
 use clawcr_tools::{ToolCall, ToolContext, ToolOrchestrator, ToolRegistry};
 
-use crate::{AgentError, ContentBlock, Message, Role, SessionState};
+use crate::{AgentError, ContentBlock, Message, Role, SessionState, TurnConfig};
 
 /// Events emitted during a query for the caller (CLI/UI) to observe.
 #[derive(Debug, Clone)]
@@ -207,6 +207,20 @@ fn build_environment_context(cwd: &Path) -> String {
 // ---------------------------------------------------------------------------
 
 const MAX_RETRIES: usize = 3;
+const MAX_TURNS_PER_QUERY: usize = 100;
+
+fn resolve_request_parameters(
+    turn_config: &TurnConfig,
+) -> (String, Option<String>, Option<serde_json::Value>) {
+    let resolved = turn_config
+        .model
+        .resolve_thinking_selection(turn_config.thinking_selection.as_deref());
+    (
+        resolved.request_model,
+        resolved.request_thinking,
+        resolved.extra_body,
+    )
+}
 
 /// The recursive agent loop — the beating heart of the runtime.
 ///
@@ -226,7 +240,8 @@ const MAX_RETRIES: usize = 3;
 /// - An unrecoverable error occurs
 pub async fn query(
     session: &mut SessionState,
-    provider: &dyn ModelProvider,
+    turn_config: &TurnConfig,
+    provider: &dyn ModelProviderSDK,
     registry: Arc<ToolRegistry>,
     orchestrator: &ToolOrchestrator,
     on_event: Option<EventCallback>,
@@ -255,8 +270,8 @@ pub async fn query(
             compact_session(session);
         }
 
-        if session.turn_count >= session.config.max_turns {
-            return Err(AgentError::MaxTurnsExceeded(session.config.max_turns));
+        if session.turn_count >= MAX_TURNS_PER_QUERY {
+            return Err(AgentError::MaxTurnsExceeded(MAX_TURNS_PER_QUERY));
         }
 
         session.turn_count += 1;
@@ -264,7 +279,7 @@ pub async fn query(
             "turn",
             turn = session.turn_count,
             session_id = %session.id,
-            model = %session.config.model,
+            model = %turn_config.model.slug,
             cwd = %session.cwd.display()
         );
         let _turn_guard = turn_span.enter();
@@ -272,30 +287,31 @@ pub async fn query(
 
         // Build model request
         let system = build_system_prompt(
-            &session.config.base_instructions,
+            &turn_config.model.base_instructions,
             &session.config.system_prompt,
             &memory_content,
             &session.cwd,
         );
+        let (request_model, request_thinking, extra_body) = resolve_request_parameters(turn_config);
         let request = ModelRequest {
-            model: session.config.model.clone(),
+            model: request_model,
             system: if system.is_empty() {
                 None
             } else {
                 Some(system)
             },
             messages: session.to_request_messages(),
-            max_tokens: session.config.token_budget.max_output_tokens,
+            max_tokens: turn_config
+                .model
+                .max_tokens
+                .map_or(session.config.token_budget.max_output_tokens, |value| {
+                    value as usize
+                }),
             tools: Some(registry.tool_definitions()),
             temperature: None,
             sampling: SamplingControls::default(),
-            thinking: Some(
-                session
-                    .config
-                    .thinking_selection
-                    .clone()
-                    .unwrap_or_else(|| session.config.reasoning_effort.label().to_lowercase()),
-            ),
+            thinking: request_thinking,
+            extra_body,
         };
         debug!(
             messages = request.messages.len(),
@@ -306,7 +322,7 @@ pub async fn query(
         );
 
         // 3.2: Stream with error classification
-        let stream_result = provider.stream(request).await;
+        let stream_result = provider.completion_stream(request).await;
 
         let mut stream = match stream_result {
             Ok(s) => {
@@ -317,7 +333,7 @@ pub async fn query(
             Err(e) => {
                 warn!(
                     provider = provider.name(),
-                    model = %session.config.model,
+                    model = %turn_config.model.slug,
                     turn = session.turn_count,
                     error = ?e,
                     "failed to create provider stream"
@@ -402,7 +418,7 @@ pub async fn query(
                 Err(e) => {
                     warn!(
                         provider = provider.name(),
-                        model = %session.config.model,
+                        model = %turn_config.model.slug,
                         turn = session.turn_count,
                         error = ?e,
                         "stream error"
@@ -502,6 +518,7 @@ pub async fn query(
 mod tests {
     use std::pin::Pin;
     use std::sync::Arc;
+    use std::sync::Mutex;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     use anyhow::Result;
@@ -510,20 +527,25 @@ mod tests {
     use serde_json::json;
 
     use clawcr_provider::{
-        ModelRequest, ModelResponse, ResponseContent, StopReason, StreamEvent, Usage,
+        ModelRequest, ModelResponse, ProviderFamily, ResponseContent, StopReason, StreamEvent,
+        Usage,
     };
     use clawcr_safety::legacy_permissions::PermissionMode;
     use clawcr_tools::{Tool, ToolOrchestrator, ToolOutput, ToolRegistry};
 
     use super::query;
-    use crate::{ContentBlock, Message, SessionConfig, SessionState};
+    use crate::{
+        ContentBlock, Message, Model, ReasoningEffort, SessionConfig, SessionState,
+        ThinkingCapability, ThinkingImplementation, ThinkingVariant, ThinkingVariantConfig,
+        TruncationMode, TruncationPolicyConfig, TurnConfig,
+    };
 
     struct SingleToolUseProvider {
         requests: AtomicUsize,
     }
 
     #[async_trait]
-    impl clawcr_provider::ModelProvider for SingleToolUseProvider {
+    impl clawcr_provider::ModelProviderSDK for SingleToolUseProvider {
         async fn completion(&self, _request: ModelRequest) -> Result<ModelResponse> {
             unreachable!("tests stream responses only")
         }
@@ -607,6 +629,39 @@ mod tests {
 
     struct MutatingTool;
 
+    struct CapturingProvider {
+        requests: Arc<Mutex<Vec<ModelRequest>>>,
+    }
+
+    #[async_trait]
+    impl clawcr_provider::ModelProviderSDK for CapturingProvider {
+        async fn completion(&self, _request: ModelRequest) -> Result<ModelResponse> {
+            unreachable!("tests stream responses only")
+        }
+
+        async fn completion_stream(
+            &self,
+            request: ModelRequest,
+        ) -> Result<Pin<Box<dyn Stream<Item = Result<StreamEvent>> + Send>>> {
+            self.requests.lock().expect("lock requests").push(request);
+            Ok(Box::pin(futures::stream::iter(vec![Ok(
+                StreamEvent::MessageDone {
+                    response: ModelResponse {
+                        id: "resp".into(),
+                        content: vec![ResponseContent::Text("done".into())],
+                        stop_reason: Some(StopReason::EndTurn),
+                        usage: Usage::default(),
+                        metadata: Default::default(),
+                    },
+                },
+            )])))
+        }
+
+        fn name(&self) -> &str {
+            "capturing-provider"
+        }
+    }
+
     #[async_trait]
     impl Tool for MutatingTool {
         fn name(&self) -> &str {
@@ -654,6 +709,10 @@ mod tests {
 
         query(
             &mut session,
+            &TurnConfig {
+                model: Model::default(),
+                thinking_selection: None,
+            },
             &SingleToolUseProvider {
                 requests: AtomicUsize::new(0),
             },
@@ -692,5 +751,77 @@ mod tests {
             content.contains("permission denied"),
             "expected tool_result to mention permission denial, got: {content}"
         );
+    }
+
+    #[tokio::test]
+    async fn query_resolves_model_variant_thinking_before_building_request() {
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let provider = CapturingProvider {
+            requests: Arc::clone(&requests),
+        };
+        let registry = Arc::new(ToolRegistry::new());
+        let orchestrator = ToolOrchestrator::new(Arc::clone(&registry));
+        let model = Model {
+            slug: "kimi-k2.5".into(),
+            display_name: "Kimi K2.5".into(),
+            provider_family: ProviderFamily::OpenAI,
+            description: None,
+            thinking_capability: ThinkingCapability::Toggle,
+            default_reasoning_effort: Some(ReasoningEffort::Medium),
+            thinking_implementation: Some(ThinkingImplementation::ModelVariant(
+                ThinkingVariantConfig {
+                    variants: vec![
+                        ThinkingVariant {
+                            selection_value: "disabled".into(),
+                            model_slug: "kimi-k2.5".into(),
+                            reasoning_effort: None,
+                            label: "Off".into(),
+                            description: "Use the standard model".into(),
+                        },
+                        ThinkingVariant {
+                            selection_value: "enabled".into(),
+                            model_slug: "kimi-k2.5-thinking".into(),
+                            reasoning_effort: Some(ReasoningEffort::Medium),
+                            label: "On".into(),
+                            description: "Use the thinking model".into(),
+                        },
+                    ],
+                },
+            )),
+            base_instructions: String::new(),
+            context_window: 200_000,
+            effective_context_window_percent: None,
+            truncation_policy: TruncationPolicyConfig {
+                mode: TruncationMode::Tokens,
+                limit: 10_000,
+            },
+            input_modalities: vec![],
+            supports_image_detail_original: false,
+            temperature: None,
+            top_p: None,
+            top_k: None,
+            max_tokens: None,
+        };
+        let mut session = SessionState::new(SessionConfig::default(), std::env::temp_dir());
+        session.push_message(Message::user("hello"));
+
+        query(
+            &mut session,
+            &TurnConfig {
+                model,
+                thinking_selection: Some("enabled".into()),
+            },
+            &provider,
+            registry,
+            &orchestrator,
+            None,
+        )
+        .await
+        .expect("query should succeed");
+
+        let captured = requests.lock().expect("lock requests");
+        assert_eq!(captured.len(), 1);
+        assert_eq!(captured[0].model, "kimi-k2.5-thinking");
+        assert_eq!(captured[0].thinking, None);
     }
 }
