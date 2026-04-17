@@ -32,32 +32,34 @@ jobs:
             echo "last_timestamp=1970-01-01T00:00:00Z" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Collect upstream commits
+      - name: Collect upstream commits (public API)
         id: upstream
         env:
           SINCE: ${{ steps.meta.outputs.last_timestamp }}
         run: |
           mkdir -p notifications
           
-          COMMITS=$(gh api repos/7df-lab/claw-code-rust/commits \
-            --paginate \
-            --jq ".[] | select(.commit.committer.date > \"$SINCE\") | {
+          COMMITS=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/commits?since=${SINCE}&per_page=100" | 
+            jq '[.[] | select(.commit.committer.date > env.SINCE) | {
               timestamp: .commit.committer.date,
-              type: \"upstream_commit\",
-              repo: \"7df-lab/claw-code-rust\",
+              type: "upstream_commit",
+              repo: "7df-lab/claw-code-rust",
               hash: .sha[0:7],
-              message: (.commit.message | split(\"\\n\")[0]),
+              message: (.commit.message | split("\n")[0]),
               author: .commit.author.name
-            }" 2>/dev/null || echo "")
+            }]')
           
-          if [ -n "$COMMITS" ] && [ "$COMMITS" != "[]" ]; then
-            echo "$COMMITS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp" || true
+          if [ -n "$COMMITS" ] && [ "$COMMITS" != "[]" ] && [ "$COMMITS" != "null" ]; then
+            echo "$COMMITS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+            UPSTREAM_COUNT=$(echo "$COMMITS" | jq 'length')
+            echo "Collected ${UPSTREAM_COUNT} upstream commits"
             echo "has_upstream=true" >> "$GITHUB_OUTPUT"
           else
+            echo "No new upstream commits since ${SINCE}"
             echo "has_upstream=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Collect our PR activity
+      - name: Collect our PR activity (gh CLI with GITHUB_TOKEN)
         id: pr_activity
         env:
           SINCE: ${{ steps.meta.outputs.last_timestamp }}
@@ -77,66 +79,74 @@ jobs:
             }" 2>/dev/null || echo "")
           
           if [ -n "$PR_DATA" ] && [ "$PR_DATA" != "[]" ]; then
-            echo "$PR_DATA" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp" || true
+            echo "$PR_DATA" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+            
+            PR_COUNT=$(echo "$PR_DATA" | jq 'length')
+            echo "Found ${PR_COUNT} updated PRs"
             
             for PR_NUM in $(echo "$PR_DATA" | jq -r '.[].pr_number'); do
-              COMMENTS=$(gh api "repos/7df-lab/claw-code-rust/pulls/${PR_NUM}/comments" \
-                --jq ".[] | select(.created_at > \"$SINCE\") | {
+              COMMENTS=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/pulls/${PR_NUM}/comments?since=${SINCE}&per_page=100" | 
+                jq '[.[] | {
                   timestamp: .created_at,
-                  type: \"pr_review_comment\",
-                  repo: \"7df-lab/claw-code-rust\",
-                  pr_number: ${PR_NUM},
+                  type: "pr_review_comment",
+                  repo: "7df-lab/claw-code-rust",
+                  pr_number: '"$PR_NUM"',
                   commenter: .user.login,
                   comment_preview: (.body[0:200])
-                }" 2>/dev/null || echo "")
+                }]')
               
-              if [ -n "$COMMENTS" ] && [ "$COMMENTS" != "[]" ]; then
-                echo "$COMMENTS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp" || true
+              if [ -n "$COMMENTS" ] && [ "$COMMENTS" != "[]" ] && [ "$COMMENTS" != "null" ]; then
+                echo "$COMMENTS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+                COMMENT_COUNT=$(echo "$COMMENTS" | jq 'length')
+                echo "  PR #${PR_NUM}: ${COMMENT_COUNT} review comments"
               fi
               
-              ISSUE_COMMENTS=$(gh api "repos/7df-lab/claw-code-rust/issues/${PR_NUM}/comments" \
-                --jq ".[] | select(.created_at > \"$SINCE\") | {
+              ISSUE_COMMENTS=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/issues/${PR_NUM}/comments?since=${SINCE}&per_page=100" | 
+                jq '[.[] | {
                   timestamp: .created_at,
-                  type: \"pr_comment\",
-                  repo: \"7df-lab/claw-code-rust\",
-                  pr_number: ${PR_NUM},
+                  type: "pr_comment",
+                  repo: "7df-lab/claw-code-rust",
+                  pr_number: '"$PR_NUM"',
                   commenter: .user.login,
                   comment_preview: (.body[0:200])
-                }" 2>/dev/null || echo "")
+                }]')
               
-              if [ -n "$ISSUE_COMMENTS" ] && [ "$ISSUE_COMMENTS" != "[]" ]; then
-                echo "$ISSUE_COMMENTS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp" || true
+              if [ -n "$ISSUE_COMMENTS" ] && [ "$ISSUE_COMMENTS" != "[]" ] && [ "$ISSUE_COMMENTS" != "null" ]; then
+                echo "$ISSUE_COMMENTS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+                ICOUNT=$(echo "$ISSUE_COMMENTS" | jq 'length')
+                echo "  PR #${PR_NUM}: ${ICOUNT} issue comments"
               fi
             done
             
             echo "has_pr=true" >> "$GITHUB_OUTPUT"
           else
+            echo "No PR activity since ${SINCE}"
             echo "has_pr=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Collect upstream issues activity
+      - name: Collect upstream issues activity (public API)
         id: issue_activity
         env:
           SINCE: ${{ steps.meta.outputs.last_timestamp }}
         run: |
-          ISSUES=$(gh api repos/7df-lab/claw-code-rust/issues \
-            --method GET \
-            --paginate \
-            --state all \
-            --jq ".[] | select(.updated_at > \"$SINCE\" and .pull_request == null) | {
+          ISSUES=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/issues?state=all&since=${SINCE}&per_page=100&sort=updated&direction=desc" | 
+            jq '[.[] | select(.pull_request == null) | {
               timestamp: .updated_at,
-              type: (if .created_at == .updated_at then \"issue_created\" else \"issue_updated\" end),
-              repo: \"7df-lab/claw-code-rust\",
+              type: (if .created_at == .updated_at then "issue_created" else "issue_updated" end),
+              repo: "7df-lab/claw-code-rust",
               issue_number: .number,
               title: .title,
               labels: [.labels[].name],
               state: .state
-            }" 2>/dev/null || echo "")
+            }]')
           
-          if [ -n "$ISSUES" ] && [ "$ISSUES" != "[]" ]; then
-            echo "$ISSUES" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp" || true
+          if [ -n "$ISSUES" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "null" ]; then
+            echo "$ISSUES" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+            ISSUE_COUNT=$(echo "$ISSUES" | jq 'length')
+            echo "Collected ${ISSUE_COUNT} issue activities"
             echo "has_issues=true" >> "$GITHUB_OUTPUT"
           else
+            echo "No issue activity since ${SINCE}"
             echo "has_issues=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -170,6 +180,8 @@ jobs:
                 collected_at: $collected,
                 summary: ("Collected at " + $collected + ", " + ($count | tostring) + " events")
               }' > "notifications/github-meta.json"
+              
+            echo "Total events in jsonl: ${UNREAD_COUNT}"
           else
             jq -n \
               --arg ts "$NOW" \
@@ -183,6 +195,8 @@ jobs:
                 collected_at: $collected,
                 summary: "No new activity since last check"
               }' > "notifications/github-meta.json"
+              
+            echo "No new activity to record"
           fi
           
           rm -f "notifications/github-activity.jsonl.tmp"
