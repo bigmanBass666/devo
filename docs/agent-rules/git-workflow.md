@@ -1,9 +1,21 @@
 # Git 工作流与上游协作
 
 ## 分支策略
-- 重要改动在 feature 分支上进行
-- 尽可能保持 main 干净并与上游同步
-- PR 提交到上游的 main 分支
+- `fork/main`：自己的维护分支，改什么都可以，不care上游
+- `fork/feat/xxx`：专门给上游提 PR 的分支，只放要提交的改动
+- **不要在 main 上直接做要给上游的改动**
+
+## 提 PR 流程
+1. `git fetch upstream` 拉取上游最新
+2. 从 `upstream/main` 创建干净的功能分支：`git checkout -b feat/xxx upstream/main`
+3. 在这个分支上只做要给上游的改动
+4. 提交并 push 到自己的 fork
+5. 从这个分支提 PR 到上游
+
+## 为什么要这样做
+- 避免 fork main 和上游 main 分叉
+- PR diff 干净，只显示真正的功能改动
+- 不把 Agent 专用文件混进去
 
 ## 提交信息
 - 格式：`type: 简短描述`
