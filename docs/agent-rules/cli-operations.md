@@ -23,3 +23,6 @@
 - API 调试：先在本地用 `curl.exe` 或 `mcp_fetch_fetch` 验证端点可用
 - 变量展开问题：shell heredoc 不可靠，用 `jq -n` 构建 JSON
 - 权限问题：`GITHUB_TOKEN` 只能访问当前仓库，上游公开仓库用 `curl` 无认证 API
+
+## Fork 维护意识
+这是 fork 仓库，提 PR 时需注意：Agent 专用文件不应出现在给上游的 PR diff 中。创建文件时先思考：这个文件是给上游用的吗？
