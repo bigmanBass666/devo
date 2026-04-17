@@ -24,7 +24,8 @@
   - Improved error messages for timeout/decoding errors
 - **Testing**: Short prompts pass 5/5, long prompts intermittently fail
 - **Root cause**: NVIDIA NIM API instability + reqwest_eventsource compatibility
-- **Status**: Not committed - requires more testing before PR
+- **Status**: UNCOMMITTED - requires more testing before commit/PR
+- **Note**: Not committed yet - waiting for stable verification
 
 ### AGENTS.md Setup COMPLETED
 - Established autonomous agent mode
