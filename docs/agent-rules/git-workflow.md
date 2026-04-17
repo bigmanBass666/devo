@@ -27,12 +27,13 @@
 - **`fork/feat/xxx`（给上游提 PR 的分支）**：提 PR 前用 `git rebase -i` 整理成少量干净的 commit
 - 原则：宁可多提交，也不要丢失工作进度
 
-## 提交 PR 前
-1. `cargo test` 通过
-2. `cargo fmt --all` 格式化
-3. `cargo clippy --all` 无警告
+## 提交 PR 前（必须全部通过才能 push）
+1. `cargo fmt --all -- --check` 无差异
+2. `cargo clippy --workspace --all-targets` 无错误
+3. `cargo test --workspace` 全部通过
 4. 验证上游兼容性
 5. 写清晰的 PR 描述：做什么/为什么/怎么做
+6. **绝对不能跳过以上任何步骤**
 
 ## 上游协作
 - 开始重要工作前务必检查上游，避免重复劳动
