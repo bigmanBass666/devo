@@ -40,17 +40,6 @@
 | 已完成 | 0 |
 | 状态 | **已废弃**（系统重置）|
 
-#### 任务列表
-1. [ ] TASK-ITER4-001 Git状态清理与同步 → Housekeeper/Worker [P0]
-2. [ ] TASK-ITER4-002 测试基线验证 → Worker [P0]
-3. [ ] TASK-ITER4-003 核心模块TODO评估与分类 → Planner [P1]
-4. [ ] TASK-ITER4-004 配置Upstream远程仓库 → Worker [P1]
-
-#### 关键事件
-| 时间 | 事件 | Agent |
-|------|------|-------|
-| 2026-04-19T14:30 | Planner完成观察循环，制定Iteration-4计划，下发4个任务到Coordinator队列 | Planner |
-
 ---
 
 ### Iteration 3: 2026-04-19 ~ 已废弃 🚫
@@ -78,17 +67,6 @@
 | 任务数 | 4 |
 | 已完成 | 0 |
 | 状态 | **已废弃**（系统重置）|
-
-#### 任务列表
-1. [ ] TASK-ITER2-001 分支清理 → Housekeeper
-2. [ ] TASK-ITER2-002 PR状态确认 → Planner
-3. [ ] TASK-ITER2-003 TODO/FIXME评估 → Planner
-4. [ ] TASK-ITER2-004 Cargo test验证 → Coordinator
-
-#### 关键事件
-| 时间 | 事件 | Agent |
-|------|------|-------|
-| 2026-04-18T15:30 | Planner完成观察+计划，写入Housekeeper清理队列 | Planner |
 
 ---
 
