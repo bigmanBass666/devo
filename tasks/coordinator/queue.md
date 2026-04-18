@@ -2,6 +2,8 @@
 
 此文件由 **Planner** 下发任务，由 **Coordinator** 消费。
 
+> **双通道说明**：Coordinator 主要通过 **inbox** (`tasks/shared/inbox/coordinator.md`) 接收 Planner 的任务分配和指令。本 queue.md 作为**结构化任务看板**，提供更详细的任务元数据（优先级、依赖、截止时间）。两者互补，不冲突。
+
 ## 任务状态
 
 - `pending` — 待处理
@@ -20,7 +22,7 @@
 
 ## 待处理任务
 
-<!-- Planner 下发的新任务列在这里 -->
+<!-- Planner 将新任务写入此区 -->
 
 ---
 
@@ -59,4 +61,3 @@
 2. **Coordinator** 从此文件读取任务，消费后移动到"进行中"
 3. 任务完成后，**Coordinator** 更新状态并移到"已完成"
 4. 如果阻塞，更新状态为 `blocked` 并说明原因
-

@@ -9,6 +9,8 @@
 - `done` — 任务完成
 - `error` — 发生错误
 
+> **与 agent-status.md 的关系**：本文件记录 Worker **运行时**细粒度状态（idle/working/done/error），agent-status.md 记录 **全局** 生命周期状态（未启动/活跃/沉睡）。Worker 完成任务后应同时更新两个文件。
+
 ## Agent 状态
 
 | Agent ID | 状态 | 当前任务 | 开始时间 | 最新心跳 | 技能 |
@@ -36,4 +38,3 @@
 ## 冲突记录
 
 <!-- 记录任何检测到的冲突或问题 -->
-
