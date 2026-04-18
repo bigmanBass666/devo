@@ -55,7 +55,6 @@ git diff upstream/main --name-only
 - [ ] 不包含 `notifications/` 目录
 - [ ] 不包含 `.trae/` 目录
 - [ ] 不包含 `AGENTS.md`
-- [ ] 不包含 `progress.txt`
 - [ ] 改动文件数 ≤ 10 个（否则需拆分）
 
 ### 7. Commit 质量 ✅ 必须通过

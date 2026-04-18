@@ -27,7 +27,7 @@
 ### [TASK-ITER2-002] PR 状态确认
 - **优先级**: P1
 - **描述**: 确认 PR #38 和 #39 的合并状态
-- **期望结果**: 更新 progress.txt，记录 PR 状态
+- **期望结果**: 更新 agent-status.md，记录 PR 状态
 - **依赖**: 无
 - **分配给**: Planner
 - **状态**: pending

@@ -1,4 +1,7 @@
-# 面向 PR 规范化的多 Agent 协调系统 — 架构文档
+# ValveOS — 面向 PR 规范化的多 Agent 协作系统
+
+> **Valve（阀门）+ OS（操作系统）**
+> 用户是阀门，控制 Agent 间的消息流转；系统管理调度、状态、通信。
 
 ## 背景
 
@@ -157,6 +160,101 @@ origin (bigmanBass666/claw-code-rust)  ← 你的 fork
 
 ---
 
+## 通信机制：半自动唤醒协议
+
+### 核心理念
+
+**理想状态**：Agent像人类团队一样，想跟谁说就跟谁说，对方自动收到
+**现实妥协**：Trae无全自主Agent，需要人工"唤醒"特定Agent
+**宗旨**：最大程度自动化，人工介入最小化（只需打开会话）
+
+### 核心概念
+
+| 概念 | 含义 |
+|------|------|
+| 沉睡 | Agent收到消息但未被人唤醒，无法执行 |
+| 唤醒 | 用户打开特定Agent的会话 |
+| 睁眼 | 被唤醒的Agent主动读取自己的inbox消息 |
+| 声音 | Agent写入共享文件的消息 |
+
+### 消息收件箱结构
+
+```
+tasks/shared/inbox/
+├── planner.md      # Planner的收件箱
+├── coordinator.md   # Coordinator的收件箱
+├── worker.md       # Worker的收件箱
+├── pr-manager.md   # PR Manager的收件箱
+├── maintainer.md   # Maintainer的收件箱
+└── housekeeper.md  # Housekeeper的收件箱
+
+tasks/shared/agent-status.md  # Agent状态与任务追踪
+tasks/shared/iteration-log.md # 迭代日志（断点续传）
+```
+
+### 通信流程
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  Agent-A 完成工作                    │
+│                                                     │
+│  1. 写入消息到 tasks/shared/inbox/目标Agent.md      │
+│  2. 更新 tasks/shared/agent-status.md               │
+│  3. 告知用户："请唤醒 [Agent-B]"                   │
+└─────────────────────────────────────────────────────┘
+                         │
+                         ▼ 用户操作（唯一人工介入）
+┌─────────────────────────────────────────────────────┐
+│              用户唤醒 Agent-B                        │
+│                                                     │
+│  （打开新会话，告诉Agent-B读取指令）                 │
+└─────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│              Agent-B 被唤醒                          │
+│                                                     │
+│  1. 读取自己的 inbox                                │
+│  2. 自主判断还需读什么文件                           │
+│  3. 执行工作                                        │
+│  4. 完成后同样写消息 + 指定唤醒谁                    │
+└─────────────────────────────────────────────────────┘
+```
+
+### 阀门原则
+
+1. **Agent不能主动唤醒其他Agent** — 只能通过用户这个"阀门"
+2. **所有跨Agent沟通必须经过用户** — 用户决定何时打开哪个阀门
+3. **每个Agent必须明确告知下一步** — 该唤醒谁、为什么、需要什么准备
+4. **被唤醒的Agent自主判断** — 读什么、怎么做，不需要用户指导
+
+### 醒来协议（每个Agent必须遵守）
+
+**醒来后第一件事**：
+1. 读取 `tasks/shared/inbox/[自己的Agent名].md`
+2. 查看是否有未处理消息
+3. 如有，标记为"已处理"并处理
+4. 根据消息内容，自主判断还需读取哪些相关文件
+
+### 完成后协议（每个Agent必须遵守）
+
+**工作完成后必须做**：
+1. 如果需要通知其他Agent → 向其 inbox 写入消息
+2. 明确告知用户："请唤醒 [Agent名称]"
+3. 更新 `tasks/shared/agent-status.md`（Agent状态 + 任务状态）
+4. 更新 `tasks/shared/iteration-log.md`（当前迭代进度）
+5. 记录日志到自己的 log 文件
+
+### 断点续传（Planner专用）
+
+Planner醒来时额外执行：
+1. 读取 `tasks/shared/agent-status.md` → 全局状态
+2. 读取 `tasks/shared/iteration-log.md` → 上次迭代进度
+3. 判断未完成任务是否有效 → 继续或标记stale
+4. 输出上次进度摘要 + 本次决策
+
+---
+
 ## 目录结构
 
 ```
@@ -206,8 +304,16 @@ tasks/
 │   └── housekeeper.log   # Housekeeper 日志
 │
 ├── shared/               # 共享资源
-│   └── progress.md       # 进度追踪
-│
+│   ├── inbox/           # Agent消息收件箱（通信总线）
+│   │   ├── planner.md
+│   │   ├── coordinator.md
+│   │   ├── worker.md
+│   │   ├── pr-manager.md
+│   │   ├── maintainer.md
+│   │   └── housekeeper.md
+│   ├── agent-status.md  # Agent状态与任务追踪
+│   └── iteration-log.md # 迭代日志（断点续传）
+
 └── ARCHITECTURE.md       # 本文档
 ```
 
@@ -396,7 +502,6 @@ PR Manager 自动执行：
 - [ ] 不包含 `notifications/` 目录
 - [ ] 不包含 `.trae/` 目录
 - [ ] 不包含 `AGENTS.md`
-- [ ] 不包含 `progress.txt`
 
 ### Commit 质量
 - [ ] commit 信息符合规范（type: description）
@@ -414,7 +519,6 @@ PR Manager 自动执行：
 - Rust 编码遵循 docs/agent-rules/rust-conventions.md
 
 ### 不重复造轮子
-- progress.txt 保留作为人工可读进度记录
 - notifications/ 保留作为 GitHub 动态来源
 - docs/agent-rules/ 保留作为项目文档
 
@@ -471,7 +575,16 @@ PR Manager 自动执行：
 | `tasks/logs/workers.log` | Worker 日志 | 可选 |
 | `tasks/logs/pr-manager.log` | PR Manager 日志 | 可选 |
 | `tasks/logs/maintainer.log` | Maintainer 日志 | 可选 |
-| `tasks/shared/progress.md` | 进度追踪 | 是 |
+| `tasks/shared/inbox/planner.md` | Planner收件箱 | 是 |
+| `tasks/shared/inbox/coordinator.md` | Coordinator收件箱 | 是 |
+| `tasks/shared/inbox/worker.md` | Worker收件箱 | 是 |
+| `tasks/shared/inbox/pr-manager.md` | PR Manager收件箱 | 是 |
+| `tasks/shared/inbox/maintainer.md` | Maintainer收件箱 | 是 |
+| `tasks/shared/inbox/housekeeper.md` | Housekeeper收件箱 | 是 |
+| `tasks/shared/agent-status.md` | Agent状态与任务追踪 | 是 |
+| `tasks/shared/iteration-log.md` | 迭代日志（断点续传） | 是 |
+| `tasks/housekeeper/instructions.md` | Housekeeper 规范 | 是 |
+| `tasks/housekeeper/cleanup-queue.md` | 分支清理队列 | 是 |
 
 ### 日志文件说明
 

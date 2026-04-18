@@ -46,7 +46,7 @@
 
 项目处于 **早期开发阶段（Early-stage）**，尚未生产就绪。
 
-根据 `progress.txt`：
+根据 `tasks/shared/agent-status.md` 和历史日志：
 - Iteration 1 已完成基础功能
 - 有 PR #38, #39 待审核
 - 主要工作：修复、改进、清理

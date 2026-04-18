@@ -1,6 +1,7 @@
-# 多 Agent 协作系统 — 用户使用指南
+# ValveOS — 多 Agent 协作系统用户指南
 
-> 让多个 AI 同时为你工作，自主协作、自动管理。
+> **Valve（阀门）+ OS（操作系统）**
+> 让多个 AI 同时为你工作，自主协作、自动管理。你只需控制"阀门"。
 
 ---
 
@@ -218,7 +219,8 @@ tasks/shared/inbox/
 ├── maintainer.md   # Maintainer的收件箱
 └── housekeeper.md  # Housekeeper的收件箱
 
-tasks/shared/agent-status.md  # 所有Agent的状态
+tasks/shared/agent-status.md  # 所有Agent的状态+任务看板
+tasks/shared/iteration-log.md # 迭代日志（断点续传）
 ```
 
 ### 阀门原则总结
@@ -257,6 +259,11 @@ tasks/shared/agent-status.md  # 所有Agent的状态
 ```
 tasks/
 ├── ARCHITECTURE.md       # 系统架构（所有人读）
+├── multi-agent-user-guide.md  # 本指南（用户读）
+├── shared/               # 共享资源
+│   ├── inbox/            # Agent消息收件箱
+│   ├── agent-status.md   # Agent状态+任务看板
+│   └── iteration-log.md  # 迭代日志（断点续传）
 ├── planner/              # Planner 的工作区
 │   ├── observations.md   # 当前观察
 │   ├── plans/           # 任务计划
@@ -370,25 +377,23 @@ cat tasks/logs/pr-manager.log
 
 如果需要重新开始：
 
-1. 清理运行数据：
-```bash
-# 清空通知
-echo '[]' > notifications/github-activity.jsonl
-echo '{"last_notification_timestamp":"1970-01-01T00:00:00Z","last_read_timestamp":"1970-01-01T00:00:00Z","unread_count":0,"collected_at":"1970-01-01T00:00:00Z","summary":"No new activity"}' > notifications/github-meta.json
+告诉任意Agent **"执行系统重置"**，它会自动：
+1. 清空所有 inbox
+2. 重置 agent-status.md（所有Agent回到"未启动"）
+3. 归档当前 iteration-log 条目
+4. 清空运行数据文件
+5. 输出："✅ 系统已重置，可以重新唤醒 Planner 开始新迭代"
 
-# 清空 tasks/ 运行数据（保留模板）
-git checkout -- tasks/planner/observations.md
-git checkout -- tasks/coordinator/queue.md
-git checkout -- tasks/workers/status.md
-# ... 其他运行文件
-```
+### 选择性重置
 
-2. 提交：
-```bash
-git add -A
-git commit -m "chore: reset system for new iteration"
-git push
-```
+| 命令 | 操作 |
+|------|------|
+| "执行系统重置" | 完全重置 |
+| "只重置任务看板" | 只重置 agent-status 的任务区 |
+| "只归档当前迭代" | 只标记当前迭代为已废弃 |
+| "只清空inbox" | 只清空所有收件箱 |
+
+> 📋 Agent执行重置时的完整操作步骤和安全规则见 `docs/agent-rules/cli-operations.md#系统重置`
 
 ---
 
@@ -419,5 +424,5 @@ A: 告诉 Maintainer "分析一下系统有什么问题"。
 
 ---
 
-**版本**：v1.0
-**更新**：2026-04-18
+**版本**：v2.0
+**更新**：2026-04-19（新增：断点续传、系统重置、迭代日志）

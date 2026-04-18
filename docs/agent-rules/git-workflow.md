@@ -21,35 +21,42 @@ git fetch upstream
 
 | 分支名 | 用途 | 基于 | 推送到 |
 |--------|------|------|--------|
-| `main` | 开发分支，包含所有 AI 文件 | - | origin |
-| `agent/planner/<task>` | Planner 工作分支 | `main` | origin |
-| `agent/coordinator/<task>` | Coordinator 工作分支 | `main` | origin |
-| `agent/worker-<id>/<task>` | Worker 工作分支 | **`upstream/main`** | origin |
-| `feat/<description>` | 准备提 PR 的干净分支 | **`upstream/main`** | origin |
+| `main` | 开发分支，包含所有AI文件 | - | origin |
+| `agent/planner/<task>` | Planner工作分支 | `main` | origin |
+| `agent/coordinator/<task>` | Coordinator工作分支 | `main` | origin |
+| `agent/worker-<id>/<task>` | Worker工作分支 | **`upstream/main`** | origin |
+| `feat/<description>` | 准备提PR的干净分支 | **`upstream/main`** | origin |
 
-### 五层 Agent 流程
+> **Housekeeper**：通常不需要独立分支，直接在 main 上操作 origin 远程分支（git push origin --delete）。如需记录清理操作，使用 `agent/housekeeper/cleanup-<date>` 基于 main。
+
+### 六层 Agent 流程（含 inbox 通信）
 
 ```
-Planner → Coordinator → Worker → PR Manager → Maintainer
-   ↓         ↓           ↓          ↓           ↓
- 决策    分配任务     执行代码    提取干净PR   分析改进
+Planner → 写Coordinator的inbox → 用户唤醒Coordinator
+   ↓                              ↓
+ 决策                           分配任务
+                                  ↓
+Worker ← 读Worker的inbox ← 用户唤醒Worker
+   ↓                              ↓
+ 执行代码                        完成通知到PR Manager inbox
+                                  ↓
+PR Manager ← 用户唤醒            提取干净PR
+   ↓
+分析改进 → Maintainer
+   ↓
+分支清理 → Housekeeper
 ```
 
-**Maintainer** 是第五层，负责日志分析 → 发现问题 → 提出改进 → 持续优化系统。
+**关键**：Agent间通过 `tasks/shared/inbox/` 传递消息，用户作为"阀门"控制唤醒。
 
 ### 关键规则
 
 1. **Worker 和 feat/ 分支必须基于 `upstream/main`**
-   - 这样它们的 diff 天然就是干净的
-   - 不包含 main 上积累的 AI 协调文件（tasks/、notifications/ 等）
-
+   - diff天然干净，不包含AI协调文件
 2. **Planner 和 Coordinator 的分支基于 `main`**
-   - 它们需要访问 tasks/ 协调文件
-   - 它们的工作不需要提 PR
-
+   - 需要访问 tasks/ 协调文件，不需要提PR
 3. **不要在 main 上直接做要给上游的改动**
-   - main 是开发分支，可以乱
-   - 提 PR 必须用 feat/ 分支
+4. **Housekeeper 只操作 origin 远程分支**
 
 ### 分支命名规范
 
@@ -64,40 +71,36 @@ Planner → Coordinator → Worker → PR Manager → Maintainer
 ### 开发阶段
 
 ```
-1. Planner 决策
-   └→ "我们需要修复 Windows UNC 路径问题"
+1. Planner 被用户唤醒
+   └→ 读取 inbox → 观察 → 制定计划
+   └→ 写入消息到 tasks/shared/inbox/coordinator.md
+   └→ 告知用户："请唤醒 Coordinator"
 
-2. Coordinator 分配
-   └→ 将任务分配给 Worker-001
+2. Coordinator 被用户唤醒
+   └→ 读取 inbox 发现 Planner 消息
+   └→ 分配任务给 Worker
+   └→ 写入消息到 tasks/shared/inbox/worker.md
+   └→ 告知用户："请唤醒 Worker"
 
 3. Worker 开发
-   a. git fetch upstream
-   b. git checkout -b agent/worker-001/fix-windows-unc upstream/main
-   c. 编写代码、测试、提交
-   d. push 到 origin
-   e. 通知完成
+   a. 读取 inbox 发现任务
+   b. git fetch upstream
+   c. git checkout -b agent/worker-001/fix-windows-unc upstream/main
+   d. 编写代码、测试、提交
+   e. push 到 origin
+   f. 写入消息到 PR Manager 的 inbox
 ```
 
 ### PR 准备阶段
 
 ```
-4. PR Manager 准备 PR
-   a. 检查 Worker 的分支
+4. PR Manager 被用户唤醒
+   a. 读取 inbox 发现 Worker 完成
    b. 创建 feat/fix-windows-unc (基于 upstream/main)
    c. cherry-pick Worker 的相关 commit
-   d. 运行质量检查：
-      - cargo fmt --check
-      - cargo clippy
-      - cargo test
-      - 检查 diff 是否干净
-   e. 如果通过 → 生成 PR 描述
-   f. 如果失败 → 返回给 Worker 修复
-
-5. 用户审批
-   └→ 查看 PR 描述和质量报告
-
-6. 提交 PR
-   └→ 从 feat/xxx 向 upstream/main 提 PR
+   d. 运行质量检查：fmt / clippy / test / diff清洁度
+   e. 如果通过 → 生成PR描述 → 告知用户审批
+   f. 如果失败 → 写入消息给Worker要求修复
 ```
 
 ---
@@ -106,7 +109,6 @@ Planner → Coordinator → Worker → PR Manager → Maintainer
 
 - 格式：`type: 简短描述`
 - 类型：`feat:` `fix:` `refactor:` `test:` `docs:` `chore:`
-- 在提交正文中引用相关 issue
 
 ### 好的 commit 信息示例
 ```
@@ -117,14 +119,14 @@ fix: handle null arrays in OpenAI responses            ✅
 ### 不好的 commit 信息示例
 ```
 chore: apply clippy fixes across workspace             ❌ 太泛
-chore: run cargo clippy --fix                         ❌ 太懒
+chore: run cargo clippy --check                         ❌ 太懒
 ```
 
 ---
 
 ## 提交频率
 
-- **`main`（个人维护分支）**：可以频繁提交，每次改动随时 commit
+- **`main`（个人维护分支）**：可以频繁提交
 - **`agent/xxx`（Agent 工作分支）**：可以频繁提交
 - **`feat/xxx`（给上游提 PR 的分支）**：只放干净的、相关的 commit
 
@@ -137,7 +139,6 @@ chore: run cargo clippy --fix                         ❌ 太懒
 3. `cargo test --workspace` 全部通过
 4. 验证上游兼容性
 5. 写清晰的 PR 描述：做什么/为什么/怎么做
-6. **绝对不能跳过以上任何步骤**
 
 ### Diff 清洁度检查
 
@@ -150,7 +151,6 @@ git diff upstream/main --name-only
 # - notifications/
 # - .trae/
 # - AGENTS.md
-# - progress.txt
 ```
 
 ---
