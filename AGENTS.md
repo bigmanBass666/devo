@@ -152,6 +152,13 @@ Housekeeper — 清理已合并/过期的分支
 
 **开始工作前**：先 `git status` 检查未提交改动，如有则先 commit + push，再开始新工作。防止中途故障导致数据丢失。
 
+### Git 操作安全规则
+
+1. **push 前先 pull**：`git pull --rebase origin main` 再 push
+2. **遇到冲突不要自己 merge**：写入 inbox 请求 Worker 处理
+3. **非执行Agent不做复杂 git 操作**：只有 Worker 和 Housekeeper 可以做 merge/rebase
+4. **push 被拒绝时**：先 `git pull --rebase origin main`，仍然失败则交给 Worker
+
 ### ⚠️ PR 质量铁律
 
 **PR 不是越大越好！**

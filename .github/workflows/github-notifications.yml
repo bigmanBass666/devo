@@ -1,8 +1,6 @@
 name: GitHub Activity Notifications
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:

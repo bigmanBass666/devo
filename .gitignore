@@ -3,3 +3,4 @@
 tasks/workers/locks/
 tasks/logs/*.log
 .trae/
+notifications/

@@ -191,6 +191,8 @@
 - 不要在未经用户同意下做重大方向变更
 - 不要让任务无限期悬停
 - 不要让不值得提 PR 的任务进入 PR 流程
+- **不要做复杂的 git 操作**（merge / rebase / conflict resolution）— 遇到 git 冲突交给 Worker
+- **不要在 push 被拒绝时自己 merge** — 先 `git pull --rebase origin main`，失败则交给 Worker
 
 ---
 
