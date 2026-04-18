@@ -9,7 +9,7 @@
 |-------|----------|----------|----------|
 | Planner | 2026-04-19 | 沉睡 | 用户手动 |
 | Coordinator | - | 未启动 | Planner |
-| Worker-001 | - | 未启动 | Coordinator |
+| Worker-001 | 2026-04-19 | 待机(等Coordinator消息) | Coordinator |
 | PR Manager | - | 未启动 | Worker |
 | Maintainer | - | 未启动 | 自动触发(3任务/24h/连续失败) |
 | Housekeeper | - | 未启动 | PR合并后/24h安全网 |
