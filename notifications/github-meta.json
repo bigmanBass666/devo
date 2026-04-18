@@ -1,7 +1,7 @@
 {
-  "last_notification_timestamp": "2026-04-18T13:19:38Z",
+  "last_notification_timestamp": "1970-01-01T00:00:00Z",
   "last_read_timestamp": "1970-01-01T00:00:00Z",
-  "unread_count": 2,
-  "collected_at": "2026-04-18T13:19:38Z",
-  "summary": "No new activity since last check"
+  "unread_count": 0,
+  "collected_at": "1970-01-01T00:00:00Z",
+  "summary": "No new activity"
 }
