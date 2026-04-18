@@ -98,3 +98,4 @@
 {"timestamp":"2026-04-05T15:45:45Z","type":"upstream_commit","repo":"7df-lab/claw-code-rust","hash":"d33849e","message":"add design-overview.md","author":"wangtsiao"}
 {"timestamp":"2026-04-02T16:36:01Z","type":"upstream_commit","repo":"7df-lab/claw-code-rust","hash":"63660ac","message":"fix(not utf8 output of powershell)","author":"wangtsiao"}
 {"timestamp":"2026-04-02T15:49:10Z","type":"upstream_commit","repo":"7df-lab/claw-code-rust","hash":"521997c","message":"fix(model name not readed from config file)","author":"wangtsiao"}
+{"timestamp":"2026-04-18T00:12:10Z","type":"upstream_commit","repo":"7df-lab/claw-code-rust","hash":"d6d6d60","message":"Merge pull request #40 from bigmanBass666/feat/null-array-fix-v2","author":"wangtsiao"}
