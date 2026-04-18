@@ -102,6 +102,29 @@ Agent 可以在用户唤醒后进入**待机轮询**，主动监听 inbox 而非
 
 用户唤醒 Agent 时附加指令："待机模式，等 [来源Agent] 消息"
 
+### 级联待机（推荐用法）
+
+不需要一口气开所有 Agent。每步只开紧邻下游：
+
+```
+1. 开 Planner(工作) + Coordinator(待机)    ← 2个终端
+   Planner 完成 → Coordinator 自动开始
+2. 开 Worker(待机)                          ← 3个终端
+   Coordinator 完成 → Worker 自动开始
+3. 开 PR Manager(待机)                      ← 3个终端
+   Worker 完成 → PR Manager 自动开始
+```
+
+Agent 完成工作后终端自动空出，所以同时最多占 2-3 个终端。
+
+### 待机建议
+
+Agent 完成后，在输出中附带待机建议，帮助用户决定下一步开谁待机：
+
+```
+请唤醒 Worker-001（待机）。预计需要 1 个 Worker。
+```
+
 ### 工作流
 
 ```
