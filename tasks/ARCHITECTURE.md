@@ -9,7 +9,7 @@
 用户开启多个 Trae AI 会话并行工作，但没有分工、没有协调。需要一个可以**自主判断"做什么"**的系统，让 AI 能够自动运转，产出**干净的 PR**。
 
 ### 目标
-建立六层架构的自主闭环系统：
+建立七层架构的自主闭环系统：
 - **Planner（决策者）** — 判断做什么，决定项目下一步
 - **Coordinator（管理员）** — 分配任务、协调冲突
 - **Worker（工人）** — 执行具体任务
@@ -35,7 +35,7 @@ origin (bigmanBass666/claw-code-rust)  ← 你的 fork
 
 ---
 
-## 六层 Agent 架构
+## 七层 Agent 架构
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -151,6 +151,7 @@ origin (bigmanBass666/claw-code-rust)  ← 你的 fork
 ┌─────────────────────────────────────────────────────────┐
 │           COO Agent（首席系统官）                        │
 │                                                          │
+│  【第七层 — 系统维护闭环】                               │
 │  - 系统文档维护与一致性审计                               │
 │  - 每次 Agent 改动后执行文档审计                          │
 │  - 评估和优化 skill 触发规则                              │
@@ -431,7 +432,7 @@ origin (bigmanBass666/claw-code-rust)  ← 你的 fork
 11. 提交 PR
     └→ 从 feat/xxx 向 upstream/main 提 PR
 
-12. 【改进闭环】Maintainer 分析
+12. 【改进闭环】Maintainer 分析 + COO 决策
     a. 收集 tasks/logs/*.log 所有日志
     b. 分析系统运行模式：
        - 任务完成率 / 失败率
@@ -441,9 +442,11 @@ origin (bigmanBass666/claw-code-rust)  ← 你的 fork
        - 低效模式识别
     c. 生成报告 → tasks/maintainer/reports/report-YYYY-MM-DD.md
     d. 更新改进队列 → tasks/maintainer/improvements.md
-    e. 向用户汇报发现的问题和改进建议
-    f. 用户批准后实施改进
-    g. 记录日志到 tasks/logs/maintainer.log
+    e. 将发现写入 COO inbox → tasks/shared/inbox/coo.md
+    f. COO 评估建议，决定采纳/暂缓/拒绝
+    g. COO 实施采纳的改进（需用户批准）
+    h. COO 执行一致性审计，记录到 tasks/coo/audit-log.md
+    i. 记录日志到 tasks/logs/maintainer.log
 
 13. Planner 重新评估
     └→ 如果有新发现或改进实施完成，回到步骤 1
@@ -562,7 +565,7 @@ PR Manager 自动执行：
 - **质量自动化**：PR Manager 自动检查，减少人为疏忽
 - **用户省心**：用户只需要偶尔监督，必要时介入
 - **可追溯**：所有决策和改动都有记录
-- **自我改进**：Maintainer 分析日志 → 发现问题 → 提出改进 → 持续优化
+- **自我改进**：Maintainer 分析日志 → 发现问题 → COO 决策改进 → 持续优化
 - **运行可观测**：完整的日志系统记录每个 Agent 的行为
 - **闭环进化**：系统通过反馈循环不断变强
 

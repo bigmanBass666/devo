@@ -16,7 +16,7 @@
 | 任务 ID | 描述 | 分配给 | 涉及文件 | 状态 | 创建时间 | 完成时间 |
 |---------|------|--------|----------|------|----------|----------|
 | TASK-009 | 配置 upstream 远程仓库 | Coordinator | - | completed | 2026-04-19 | 2026-04-19 |
-| TASK-010 | 修复 CJK 文本 panic（Issue #36） | Worker-001 | crates/provider/src/text_normalization.rs | in_progress | 2026-04-19 | - |
+| TASK-010 | 修复 CJK 文本 panic（Issue #36） | Worker-001 | crates/provider/src/text_normalization.rs | blocked | 2026-04-19 | - |
 | TASK-011 | 重新提取 Windows UNC path 修复为干净分支 | Worker-002 | crates/utils/src/home_dir.rs | blocked | 2026-04-19 | - |
 | TASK-012 | 清理远程分支 | Worker-003 | - | completed | 2026-04-19 | 2026-04-19 |
 

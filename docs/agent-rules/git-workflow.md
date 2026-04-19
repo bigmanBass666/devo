@@ -29,7 +29,7 @@ git fetch upstream
 
 > **Housekeeper**：通常不需要独立分支，直接在 main 上操作 origin 远程分支（git push origin --delete）。如需记录清理操作，使用 `agent/housekeeper/cleanup-<date>` 基于 main。
 
-### 六层 Agent 流程（含 inbox 通信）
+### 七层 Agent 流程（含 inbox 通信）
 
 ```
 Planner → 写Coordinator的inbox → 用户唤醒Coordinator
