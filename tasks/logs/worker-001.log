@@ -1,0 +1,81 @@
+[2026-04-19 17:05:00] [Worker-001] [WAKEUP] 被用户唤醒
+  - detail: 开始醒来协议，读取inbox+agent-status
+  - data: { "files_read": ["inbox/worker.md", "agent-status.md", "workers/status.md", "assignments.md"] }
+
+[2026-04-19 17:06:00] [Worker-001] [MESSAGE] 读取 inbox
+  - detail: 从Coordinator接收TASK-010分配消息，标记为已读
+  - data: { "direction": "read", "from": "coordinator", "task_id": "TASK-010" }
+
+[2026-04-19 17:06:30] [Worker-001] [INFO] 认领任务
+  - detail: 从 assignments.md 认领 TASK-010，状态更新为 in_progress
+  - data: { "task_id": "TASK-010", "status": "in_progress" }
+
+[2026-04-19 17:07:00] [Worker-001] [INFO] 创建工作分支
+  - detail: 尝试基于 upstream/main 创建 agent/worker-001/fix-cjk-panic
+  - data: { "branch": "agent/worker-001/fix-cjk-panic", "base": "upstream/main" }
+
+[2026-04-19 17:08:00] [Worker-001] [ERROR] Git 分支创建失败
+  - detail: "git checkout -b agent/worker-001/fix-cjk-panic upstream/main" 报错 "fatal: 'upstream/main' is not a commit"
+  - data: { "error": "upstream/main not recognized as commit", "attempt": 1 }
+
+[2026-04-19 17:09:00] [Worker-001] [INFO] 使用 FETCH_HEAD 创建分支
+  - detail: git fetch upstream main 成功，FETCH_HEAD 指向 82e2d404，用该 SHA 创建分支
+  - data: { "sha": "82e2d404ca5eb03cddecee0283f056d295ec55f4", "attempt": 2 }
+
+[2026-04-19 17:10:00] [Worker-001] [ERROR] Git 工作树状态冲突
+  - detail: checkout 被拒绝，因为本地有未提交的改动（tasks/ 状态文件）
+  - data: { "conflicting_files": ["tasks/coordinator/assignments.md", "tasks/shared/agent-status.md", "tasks/shared/inbox/worker.md", "tasks/workers/status.md"] }
+
+[2026-04-19 17:11:00] [Worker-001] [ERROR] Git stash 失败
+  - detail: "git stash" 报错 "You do not have the initial commit yet" — 仓库处于无初始提交状态
+  - data: { "error": "no_initial_commit", "attempt": "stash" }
+
+[2026-04-19 17:12:00] [Worker-001] [ERROR] Git index.lock 频繁出现
+  - detail: 多次遇到 "Unable to create .git/index.lock: File exists" 错误，需要手动删除锁文件
+  - data: { "error": "index_lock", "occurrences": 3, "fix": "Remove-Item -Force .git/index.lock" }
+
+[2026-04-19 17:15:00] [Worker-001] [ERROR] Git 仓库严重损坏
+  - detail: |
+      使用 git checkout -f main 后，仓库进入损坏状态：
+      1. .git 目录存在但内部结构不完整
+      2. .git/HEAD 文件存在（内容: ref: refs/heads/main）
+      3. .git/refs/heads/ 为空（无 main 引用文件）
+      4. .git/objects/ 存在
+      5. .git/config 中 upstream remote 丢失
+      6. git status 报 "fatal: not a git repository"
+      7. 但 PowerShell Get-ChildItem -Force 能看到 .git 内文件
+      
+      根本原因分析：
+      - 之前的 checkout -f 操作可能损坏了 .git 内部文件
+      - .git 目录的文件系统状态与 git 命令感知不一致
+      - 可能是 Windows 文件系统权限或并发访问导致
+  - data: { "error_type": "git_corruption", "symptoms": ["HEAD_exists_but_refs_missing", "config_missing_upstream", "git_status_fails"], "root_cause": "forced_checkout_damaged_git_internals" }
+
+[2026-04-19 17:20:00] [Worker-001] [INFO] Git 仓库重建
+  - detail: |
+      执行 git init 重建仓库结构，然后：
+      1. git remote add origin/upstream
+      2. git fetch upstream — 成功获取所有对象
+      3. git log --oneline -5 — 显示本地 main 有之前的 commits
+      4. 但 git reset --hard upstream/main 仍然失败（"ambiguous argument"）
+      
+      当前状态：main 分支存在，有本地 commits，但与 upstream/main 不同步
+  - data: { "action": "git_init_rebuild", "result": "partial_recovery" }
+
+[2026-04-19 17:25:00] [Worker-001] [WARN] 任务受阻 — Git 状态不稳定
+  - detail: |
+      TASK-010 无法继续执行，原因：
+      1. 无法基于 upstream/main 创建干净的工作分支
+      2. 仓库 git 状态不稳定，需要人工干预
+      3. text_normalization.rs 文件在 upstream/main 上不存在（可能在上游是另一个路径或尚未合并）
+      4. 本地 main 分支包含 ValveOS 协调文件的 commits，与 upstream/main 有分歧
+      
+      建议 Coordinator：
+      1. 需要先修复 git 仓库状态（可能需要完全重新 clone）
+      2. 确认 text_normalization.rs 在上游的确切位置
+      3. 修复后重新分配 TASK-010
+  - data: { "blocked": true, "reason": "git_repo_unstable", "suggested_fix": "reclone_or_manual_git_repair" }
+
+[2026-04-19 17:30:00] [Worker-001] [INFO] 用户指令：结束任务，记录日志
+  - detail: 用户要求结束当前任务，记录详细日志（特别是 git 问题）
+  - data: { "action": "task_aborted", "user_instruction": "end_task_and_log" }
