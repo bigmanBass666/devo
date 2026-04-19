@@ -379,7 +379,15 @@ tasks/
 │   │   ├── housekeeper.md
 │   └── coo.md
 │   ├── agent-status.md  # Agent状态与任务追踪
-│   └── iteration-log.md # 迭代日志（断点续传）
+│   ├── iteration-log.md # 迭代日志（断点续传）
+│   └── session-reports/ # 会话摘要（观察/异常/建议）
+│       ├── planner.md
+│       ├── coordinator.md
+│       ├── worker.md
+│       ├── pr-manager.md
+│       ├── maintainer.md
+│       ├── housekeeper.md
+│       └── coo.md
 │
 ├── ARCHITECTURE.md       # 本文档
 ├── SYSTEM-MANIFEST.md    # 元数据唯一事实来源
@@ -661,6 +669,8 @@ PR Manager 自动执行：
 | `tasks/shared/inbox/coo.md` | COO收件箱 | 是 |
 | `tasks/shared/agent-status.md` | Agent状态与任务追踪 | 是 |
 | `tasks/shared/iteration-log.md` | 迭代日志（断点续传） | 是 |
+| `tasks/shared/decisions.md` | 技术决策记录 | 是 |
+| `tasks/shared/session-reports/*.md` | 7 个 Agent 会话摘要 | 是 |
 | `tasks/housekeeper/instructions.md` | Housekeeper 规范 | 是 |
 | `tasks/housekeeper/cleanup-queue.md` | 分支清理队列 | 是 |
 | `tasks/coo/instructions.md` | COO 规范 | 是 |

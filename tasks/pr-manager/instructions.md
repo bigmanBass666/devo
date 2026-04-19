@@ -311,6 +311,10 @@ PR 合并后，将待清理的 feat/ 分支写入 `tasks/housekeeper/cleanup-que
 
 所有上下文信息必须已写入目标 Agent 的 inbox 和相关文件。用户不需要知道细节，只需要知道开哪扇门。
 
+**写会话摘要** — 在 `tasks/shared/session-reports/pr-manager.md` 追加一行：
+`| YYYY-MM-DD HH:MM | [本次会话目标] | [关键观察] | [异常/协议违反] | [改进建议] |`
+如果没有异常或建议，对应列写 "无"。
+
 ### 消息写入规则
 
 如果需要通知其他Agent，向其inbox写入消息：
