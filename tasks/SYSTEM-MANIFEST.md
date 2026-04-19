@@ -72,6 +72,7 @@
 | `tasks/shared/agent-status.md` | ✅ | Agent 状态与任务追踪 |
 | `tasks/shared/iteration-log.md` | ✅ | 迭代日志（断点续传） |
 | `tasks/coo/audit-log.md` | ✅ | COO 审计日志 |
+| `tasks/shared/decisions.md` | ✅ | 技术决策记录（为什么选X不选Y） |
 | `docs/agent-rules/cli-operations.md` | ✅ | CLI 操作参考 |
 | `docs/agent-rules/git-workflow.md` | ✅ | Git 工作流与上游协作 |
 | `docs/agent-rules/rust-conventions.md` | ✅ | Rust 编码与测试规范 |
@@ -146,6 +147,10 @@
 ---
 
 > **路由覆盖原则**: AGENTS.md 路由表应覆盖系统中所有"用户可能问到的概念"。当新增重要概念时，应同步在路由表添加对应条目。路由条目的触发词应包含用户最可能使用的关键词变体。
+
+> **去品牌化原则**: 品牌名 "ValveOS" 只在 AGENTS.md（标题+元数据行）和本文件（标题行）中硬编码，共约 4 处。其他文件（shared/*.md、instructions.md 等）只描述功能，不硬编码品牌名。需要引用系统名时使用"本系统"或引用 AGENTS.md 标题行。改名时只需修改 AGENTS.md + 本文件。
+
+> **闭环分形原则**: 闭环没有固定的范围边界。当前解决的是项目级闭环（同一项目跨会话），但未来可能需要跨项目级闭环。不要硬编码闭环的范围——设计时应保持闭环机制的可扩展性。
 
 ## AGENTS.md 章节分类原则
 
