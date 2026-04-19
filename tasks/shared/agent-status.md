@@ -7,29 +7,37 @@
 
 | Agent | 最近活跃 | 当前状态 | 等待唤醒 |
 |-------|----------|----------|----------|
-| Planner | 2026-04-19 | 沉睡 | 用户手动 |
-| Coordinator | 2026-04-19 | 活跃 | - |
-| Worker-001 | 2026-04-19 | 沉睡 | Coordinator |
-| Worker-002 | 2026-04-19 | 沉睡 | Coordinator |
-| Worker-003 | 2026-04-19 | 沉睡 | Coordinator |
+| Planner | - | 未启动 | 用户手动 |
+| Coordinator | - | 未启动 | Planner |
+| Worker-001 | - | 未启动 | Coordinator |
+| Worker-002 | - | 未启动 | Coordinator |
+| Worker-003 | - | 未启动 | Coordinator |
 | PR Manager | - | 未启动 | Worker |
 | Maintainer | - | 未启动 | 自动触发(3任务/24h/连续失败) |
 | Housekeeper | - | 未启动 | PR合并后/24h安全网 |
-| COO | 2026-04-19 | 活跃 | - |
+| COO | - | 未启动 | - |
 
 ## 全局任务看板
 
 > 追踪所有任务的完整生命周期
 > 任务状态: pending / in_progress / completed / blocked / failed / stale
 
-### 当前迭代: Iteration 6
+### 当前迭代: Iteration 7
 
 | 任务ID | 描述 | 状态 | 负责人 | 优先级 | 创建时间 |
 |--------|------|------|--------|--------|----------|
-| TASK-009 | 配置 upstream 远程仓库 | completed | Coordinator | P0 | 2026-04-19 |
-| TASK-010 | 修复 CJK 文本 panic（Issue #36）— 修复已存在于origin/main，无需提PR | blocked | Worker-001 | P0 | 2026-04-19 |
-| TASK-011 | 重新提取 Windows UNC path 修复为干净分支 — upstream/main ref不可用，需worktree重试 | blocked | Worker-002 | P1 | 2026-04-19 |
-| TASK-012 | 清理远程分支 | completed | Worker-003 | P2 | 2026-04-19 |
+| - | - | - | - | - | - |
+
+### 已废弃迭代
+
+#### Iteration 6 (已废弃 — 2026-04-20 系统重置)
+
+| 任务ID | 描述 | 状态 | 负责人 | 优先级 |
+|--------|------|------|--------|--------|
+| TASK-009 | 配置 upstream 远程仓库 | completed | Coordinator | P0 |
+| TASK-010 | 修复 CJK 文本 panic（Issue #36） | blocked | Worker-001 | P0 |
+| TASK-011 | 重新提取 Windows UNC path 修复为干净分支 | blocked | Worker-002 | P1 |
+| TASK-012 | 清理远程分支 | completed | Worker-003 | P2 |
 
 ---
 
@@ -37,10 +45,7 @@
 
 | 时间 | 被唤醒者 | 唤醒原因 | 结果 |
 |------|----------|----------|------|
-| 2026-04-19 | COO | 系统维护与改进 | 进行中 |
-| 2026-04-19 | Coordinator | Planner下发任务 | TASK-009完成，TASK-010/011/012已分配 |
-| 2026-04-19 | Planner | 用户手动唤醒 | 制定Iteration 6计划，4任务下发 |
-| 2026-04-19 | Planner | 用户手动唤醒 | 制定Iteration 5计划，4任务下发 |
+| 2026-04-20 | 系统 | 系统重置 | 全部Agent回到未启动 |
 
 ## 使用说明
 

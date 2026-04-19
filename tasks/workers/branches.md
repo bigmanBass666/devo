@@ -13,8 +13,7 @@
 
 | Agent ID | 分支名 | 任务 ID | 创建时间 | 状态 |
 |----------|--------|---------|----------|------|
-| Worker-001 | agent/worker-001/fix-cjk-panic | TASK-010 | 2026-04-19 | planned |
-| Worker-002 | feat/fix-windows-unc-path-v2 | TASK-011 | 2026-04-19 | planned |
+| - | - | - | - | - |
 
 ---
 
