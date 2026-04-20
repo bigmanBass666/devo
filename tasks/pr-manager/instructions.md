@@ -219,6 +219,24 @@ PR 合并后，将待清理的 feat/ 分支写入 `tasks/housekeeper/cleanup-que
 
 ---
 
+## 边界条件
+
+### 无消息时
+- inbox 为空 → 检查 `tasks/pr-manager/pr-queue.md` 是否有待处理任务
+- pr-queue 也为空 → 输出"无待处理任务，请唤醒 COO 或等待新任务"，更新状态为沉睡
+
+### 任务执行失败
+- 质量检查不通过 → 记录失败原因到 pr-log，标记任务状态为 failed，通知 Coordinator
+- git 操作冲突 → 先 `git pull --rebase origin main`，仍失败则写入 Worker inbox
+- feat/ 分支创建失败 → 检查 upstream/main 是否最新，重试一次
+
+### 异常情况
+- Worker 的分支不存在或已被删除 → 标记任务为 orphaned，通知 Coordinator
+- PR 描述生成超时 → 使用简化模板，不阻塞流程
+- 用户审批被拒绝 → 记录拒绝原因，清理 feat/ 分支
+
+---
+
 ## 禁止事项
 
 - 不要在未检查的情况下直接提交 PR

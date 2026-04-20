@@ -73,6 +73,7 @@
 | `tasks/shared/iteration-log.md` | ✅ | 迭代日志（断点续传） |
 | `tasks/coo/audit-log.md` | ✅ | COO 审计日志 |
 | `tasks/shared/decisions.md` | ✅ | 技术决策记录（为什么选X不选Y） |
+| `tasks/shared/project-understanding.md` | ✅ | 上游代码结构理解（crate 映射/编译命令/修改模式） |
 | `tasks/shared/session-reports/*.md` | ✅ | 7 个 Agent 的会话摘要（观察/异常/建议） |
 | `docs/agent-rules/cli-operations.md` | ✅ | CLI 操作参考 |
 | `docs/agent-rules/git-workflow.md` | ✅ | Git 工作流与上游协作 |
