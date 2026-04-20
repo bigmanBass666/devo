@@ -7,7 +7,7 @@
 
 | Agent | 最近活跃 | 当前状态 | 等待唤醒 |
 |-------|----------|----------|----------|
-| Planner | 2026-04-20 | 沉睡 | 用户手动 |
+| Planner | - | 未启动 | 用户手动 |
 | Coordinator | - | 未启动 | 用户 |
 | Worker-001 | - | 未启动 | Coordinator |
 | Worker-002 | - | 未启动 | Coordinator |
@@ -33,16 +33,21 @@
 > 追踪所有任务的完整生命周期
 > 任务状态: pending / in_progress / completed / blocked / failed / stale
 
-### 当前迭代: Iteration 9
+### 当前迭代: Iteration 10
 
 | 任务ID | 描述 | 状态 | 负责人 | 优先级 | 创建时间 |
 |--------|------|------|--------|--------|----------|
-| TASK-016 | 同步 local main 到 upstream/main | pending | Coordinator→Worker | P0 | 2026-04-20 |
-| TASK-017 | 关闭 PR #42、Issue #36、Issue #35 | pending | 需用户审批（原因：评论属社交边界；操作：在PR#42/Issue#36/Issue#35评论请求关闭） | P1 | 2026-04-20 |
-| TASK-018 | 清理 origin/feat/fix-windows-unc-path 旧分支 | pending | Worker | P2 | 2026-04-20 |
-| TASK-019 | 评估上游 Issue 贡献可行性 | pending | Worker | P2 | 2026-04-20 |
 
 ### 已废弃迭代
+
+#### Iteration 9 (已废弃 — 2026-04-20 系统重置)
+
+| 任务ID | 描述 | 状态 | 负责人 | 优先级 |
+|--------|------|------|--------|--------|
+| TASK-016 | 同步 local main 到 upstream/main | pending | Coordinator→Worker | P0 |
+| TASK-017 | 关闭 PR #42、Issue #36、Issue #35 | pending | 需用户审批 | P1 |
+| TASK-018 | 清理 origin/feat/fix-windows-unc-path 旧分支 | pending | Worker | P2 |
+| TASK-019 | 评估上游 Issue 贡献可行性 | pending | Worker | P2 |
 
 #### Iteration 8 (已废弃 — 2026-04-20 系统重置)
 
@@ -73,8 +78,7 @@
 
 | 时间 | 被唤醒者 | 唤醒原因 | 结果 |
 |------|----------|----------|------|
-| 2026-04-20 | Planner | 用户唤醒 | Iteration 9 计划制定完成，4任务下发 |
-| 2026-04-20 | 系统 | 系统重置 | 全部Agent回到未启动 |
+| 2026-04-20 | 系统 | 系统重置 | 全部Agent回到未启动，Iteration 10 就绪 |
 
 ## 使用说明
 

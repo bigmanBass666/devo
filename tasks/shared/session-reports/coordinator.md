@@ -15,3 +15,9 @@
 > 以下为重置前历史记录。Iteration 8 已废弃，Iteration 9 从空白开始。
 
 ---
+
+## ⏬ 系统重置分隔线 — 2026-04-20 (Iteration 10)
+
+> 以下为重置前历史记录。Iteration 9 已废弃，Iteration 10 从空白开始。
+
+---

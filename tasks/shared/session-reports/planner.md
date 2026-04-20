@@ -15,3 +15,9 @@
 | 2026-04-20 22:00 | Iteration 9 计划制定 | local main落后upstream/main 8提交；PR #42/Issue #36/#35均可关闭；编译通过；10个TODO在query.rs | 无 | 建议在sync完成后验证cargo test是否通过 |
 
 ---
+
+## ⏬ 系统重置分隔线 — 2026-04-20 (Iteration 10)
+
+> 以下为重置前历史记录。Iteration 9 已废弃，Iteration 10 从空白开始。
+
+---
