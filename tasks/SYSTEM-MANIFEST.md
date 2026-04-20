@@ -97,6 +97,7 @@
 | `tasks/planner/plans/*.md` | ✅ | 任务计划 |
 | `tasks/planner/backlog.md` | ✅ | 长期待办 |
 | `notifications/*.json` | ✅ 可选 | GitHub 日志 |
+| `tasks/logs/system-commands.log` | ❌ | 系统命令日志（不纳入 Git） |
 | `tasks/logs/*.log` | ❌ | 运行时日志（不纳入 Git） |
 | `.trae/*` | ❌ | AI 状态数据 |
 

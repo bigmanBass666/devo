@@ -6,6 +6,7 @@
 
 | 文件 | 记录内容 |
 |------|----------|
+| `system-commands.log` | 用户触发的系统命令记录（INPUT/RESPONSE） |
 | `system.log` | 系统级事件（启动、重置、配置变更） |
 | `planner.log` | Planner 的决策和观察记录 |
 | `coordinator.log` | Coordinator 的协调和分配记录 |
@@ -32,6 +33,10 @@
 - **ERROR** — 错误（如任务失败）
 - **DECISION** — 决策点（Planner/Maintainer）
 
+**系统命令日志级别**：
+- **INPUT** — 用户输入触发系统命令
+- **RESPONSE** — Agent 处理完成并响应
+
 **ValveOS 特有事件**：
 - **WAKEUP** — Agent被唤醒（含醒来后读取的文件列表）
 - **RESUME** — 断点续传（发现上次进度、任务有效性判断）
@@ -47,6 +52,12 @@
 [2026-04-19 10:00:00] [Planner] [WAKEUP] 被用户唤醒
   - detail: 开始醒来协议，读取inbox+agent-status+iteration-log
   - data: { "files_read": ["inbox/planner.md", "agent-status.md", "iteration-log.md"] }
+
+# 系统命令日志
+[2026-04-20 09:15:00] [INPUT] "看看状态" → 触发 查看状态 命令
+[2026-04-20 09:15:00] [RESPONSE] COO 处理，输出 7 个 Agent 状态
+[2026-04-20 14:30:00] [INPUT] "从头开始" → 触发 系统重置 命令
+[2026-04-20 14:30:01] [RESPONSE] 完全重置，清空 6 个 inbox
 
 # 断点续传
 [2026-04-19 10:01:00] [Planner] [RESUME] 发现上次迭代进度
