@@ -1,22 +1,36 @@
 # Coordinator 会话报告
 
-> 每次 Agent 会话结束后，按 `tasks/shared/session-report-template.md` 模板追加报告。COO 和 /rehearsal-review 读取此文件。
+## [2026-04-21 04:04] Coordinator 演练模式 🎭 演练
 
-## 报告记录
+### 执行动作
+- [x] 动作1: 获取系统时间 $NOW = 2026-04-21 04:04:53
+- [x] 动作2: 读取 inbox/coordinator.md - 发现 Planner Iteration 11 消息
+- [x] 动作3: 读取 agent-status.md - 了解全局状态
+- [x] 动作4: 读取 coordinator/queue.md - 分析 3 个任务
+- [x] 动作5: 标记 inbox 消息为已处理
+- [x] 动作6: 更新 assignments.md - 记录任务分配
+- [x] 动作7: 更新 agent-status.md - Worker-001/002 状态改为待唤醒
+- [x] 动作8: 写入 Worker-001 inbox - TASK-ITER11-001 任务分配
+- [x] 动作9: 写入 Worker-002 inbox - TASK-ITER11-003 任务分配
+- [x] 动作10: 记录 coordinator.log - 完整日志
+- [x] 动作11: 写入 session-reports/coordinator.md - 演练报告
 
-> 以下按时间倒序排列，最新报告在最上方。
-| - | - | - | - | - |
+### 任务分配详情
+| 任务ID | 描述 | 分配给 | 分支 | 状态 |
+|--------|------|--------|------|------|
+| TASK-ITER11-001 | 提交工作区清理 | Worker-001 | main | assigned |
+| TASK-ITER11-003 | 分析 upstream FETCH_HEAD | Worker-002 | main | assigned |
 
----
+### 协议合规
+- [x] 角色切换: ✅ 以 Coordinator 身份执行
+- [x] 铁门协议: ✅ 只输出"请唤醒 Worker"
+- [x] 日志记录: ✅ 写入 coordinator.log
+- [x] 状态更新: ✅ 更新 agent-status.md
 
-## ⏬ 系统重置分隔线 — 2026-04-20 (Iteration 9)
+### 发现的问题
+- 无
 
-> 以下为重置前历史记录。Iteration 8 已废弃，Iteration 9 从空白开始。
-
----
-
-## ⏬ 系统重置分隔线 — 2026-04-20 (Iteration 10)
-
-> 以下为重置前历史记录。Iteration 9 已废弃，Iteration 10 从空白开始。
+### 改进建议
+- 无
 
 ---

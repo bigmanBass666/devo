@@ -15,7 +15,8 @@
 
 | 任务 ID | 描述 | 分配给 | 涉及文件 | 状态 | 创建时间 | 完成时间 |
 |---------|------|--------|----------|------|----------|----------|
-| - | - | - | - | - | - | - |
+| TASK-ITER11-001 | 提交工作区清理 | Worker-001 | observations.md, inbox, rehearsal-plan.md, rehearsal2-plan.md | in_progress | 2026-04-21T04:04:53Z | - |
+| TASK-ITER11-003 | 分析 upstream FETCH_HEAD 新提交 | Worker-002 | tasks/planner/backlog.md | assigned | 2026-04-21T04:04:53Z | - |
 
 ---
 

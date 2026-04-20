@@ -4,7 +4,9 @@
 
 ## 报告记录
 
-> 以下按时间倒序排列，最新报告在最上方。
+| 2026-04-21 03:50 | Iteration 11 启动 🎭 演练 | 下发 3 个任务：TASK-ITER11-001（工作区清理）/ TASK-ITER11-002（归档Iteration 10）/ TASK-ITER11-003（分析upstream新提交） | 无 | 发现 upstream fetch 后 tracking ref 在 sandbox 中立即失效，需用 FETCH_HEAD 替代 |
+
+---
 | 2026-04-20 13:00 | 断点续传：验证Iteration 7任务有效性 | TASK-013实际已完成（merge-base验证）；PR #42 mergeable=False需rebase；upstream/main远程跟踪分支sandbox存储异常 | ARCHITECTURE.md中upstream仓库地址(claw-cli)与实际(7df-lab)不一致 | 更新ARCHITECTURE.md中upstream仓库地址；考虑在观察循环中增加merge-base验证步骤避免下发已完成任务 |
 
 ---

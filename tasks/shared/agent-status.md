@@ -3,16 +3,16 @@
 > 用户是阀门，只有被唤醒的Agent才能执行
 > Agent之间通过 inbox 文件传递消息
 >
-> **ValveOS v0.2.0** — 最后更新: 2026-04-20
+> **ValveOS v0.2.0** — 最后更新: 2026-04-21
 
 ## Agent 状态
 
 | Agent | 最近活跃 | 当前状态 | 等待唤醒 |
 |-------|----------|----------|----------|
-| Planner | 2026-04-21T02:35:00Z | 沉睡 | — |
-| Coordinator | - | 未启动 | Planner |
-| Worker-001 | - | 未启动 | Coordinator |
-| Worker-002 | - | 未启动 | Coordinator |
+| Planner | 2026-04-21T03:50:00Z | 沉睡 | — |
+| Coordinator | 2026-04-21T04:04:53Z | 待机 | Worker |
+| Worker-001 | - | 待唤醒 | Coordinator |
+| Worker-002 | - | 待唤醒 | Coordinator |
 | Worker-003 | - | 未启动 | Coordinator |
 | PR Manager | - | 未启动 | Worker |
 | Maintainer | - | 未启动 | 自动触发(3任务/24h/连续失败) |
@@ -32,34 +32,30 @@
 ## 全局任务看板
 
 > 追踪所有任务的完整生命周期
-> 任务状态: pending / in_progress / completed / blocked / failed / stale
+> 任务状态: pending / in_progress / completed / blocked / failed / stale / frozen
 
-### 🏗️ ValveOS v0.2.0 基础建设里程碑
+### 🚀 Iteration 11: 2026-04-21 ~ 进行中
 
-> 2026-04-20 完成 — 非迭代式系统升级
+> Planner 演练模式启动
 
-| 任务ID | 描述 | 状态 |
-|--------|------|------|
-| VF-001 | 统一 upstream 仓库名称 (7df-lab) | **completed** |
-| VF-002 | 创建项目理解文档 project-understanding.md | **completed** |
-| VF-003 | AGENTS.md 增强（安全铁律+能力声明+版本号） | **completed** |
-| VF-004 | ARCHITECTURE.md 瘦身（提取标准开场白） | **completed** |
-| VF-005 | 4 个 instructions.md 补全边界条件 | **completed** |
-| VF-006 | 斜杠命令协议 (/status, /reset, /audit, /help, /log) | **completed** |
-| VF-007 | 系统命令日志 system-commands.log | **completed** |
+| 任务ID | 描述 | 状态 | 负责人 | 优先级 |
+|--------|------|------|--------|--------|
+| TASK-ITER11-001 | 提交工作区清理 | in_progress | Worker-001 | P1 |
+| TASK-ITER11-002 | 归档 Iteration 10 冻结任务 | pending | Planner | P1 |
+| TASK-ITER11-003 | 分析 upstream FETCH_HEAD 新提交 | in_progress | Worker-002 | P2 |
 
 ### 历史迭代（已结束）
 
 #### Iteration 10: 2026-04-20 ~ 冻结
 
-> 被 ValveOS 基础建设替代，任务已由基础建设里程碑覆盖
+> 被 Iteration 11 替代，任务已归档
 
 | 任务ID | 描述 | 状态 | 负责人 | 优先级 |
 |--------|------|------|--------|--------|
 | TASK-ITER10-001 | 验证 upstream/main 同步状态 | completed | Planner | P0 |
-| TASK-ITER10-002 | 同步 upstream/main → origin/main | pending | Coordinator→Worker | P0 |
-| TASK-ITER10-003 | 清理未追踪的 test/ 目录 | completed | （.gitignore 处理） | P1 |
-| TASK-ITER10-004 | 评估 query.rs TODO 并形成改进建议 | pending | Worker | P2 |
+| TASK-ITER10-002 | 同步 upstream/main → origin/main | frozen | Coordinator→Worker | P0 |
+| TASK-ITER10-003 | 清理未追踪的 test/ 目录 | frozen | （.gitignore 处理） | P1 |
+| TASK-ITER10-004 | 评估 query.rs TODO 并形成改进建议 | frozen | Worker | P2 |
 
 #### Iteration 1-9: 已废弃
 
@@ -74,6 +70,7 @@
 | 2026-04-20 12:30 | 系统 | 系统重置 | Iteration 10 启动 |
 | 2026-04-20 15:23 | 系统 | ValveOS 基础建设 spec | v0.2.0 就绪 |
 | 2026-04-20 21:00 | 系统 | 运行时基础设施加固 | 进行中 |
+| 2026-04-21 04:04 | Coordinator | 演练模式 | 任务已分配给 Worker |
 
 ## 使用说明
 

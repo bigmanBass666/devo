@@ -10,6 +10,7 @@
 - `in_progress` — 进行中
 - `completed` — 已完成
 - `blocked` — 被阻塞
+- `frozen` — 冻结/归档
 
 ## 优先级
 
@@ -22,30 +23,28 @@
 
 ## 待处理任务
 
-### TASK-ITER10-002: 同步 upstream/main → origin/main
-- **描述**: upstream/main (82e2d40) 领先 origin/main (cbae86b) 8个提交，包括 PR #40 null数组修复、PR #42 home_dir.rs 修复等。需要同步。
+### TASK-ITER11-001: 提交工作区清理
+- **描述**: 工作区有 4 个文件更改未提交：observations.md 更新、planner inbox 更新、删除的 rehearsal-plan.md、删除的 rehearsal2-plan.md。需提交清理提交。
 - **状态**: pending
-- **优先级**: P0
+- **优先级**: P1
 - **负责人**: Coordinator → Worker
 - **操作步骤**:
   1. Coordinator 分配任务给 Worker
-  2. Worker 执行 `git pull --rebase upstream main` 到 local main
-  3. 验证 cargo test 通过
-  4. push 到 origin/main
-  5. 验证 origin/main = upstream/main
+  2. Worker 执行 git add + commit（分支：main）
+  3. Worker 执行 git push origin main
 
-### TASK-ITER10-003: 清理未追踪的 test/ 目录
-- **描述**: 仓库根目录存在 `test/` 未追踪目录，内容仅一个"重置状态.md"文件，疑似调试遗留，应删除。
+### TASK-ITER11-002: 归档 Iteration 10 冻结任务
+- **描述**: Iteration 10 的任务已过时（TASK-ITER10-002 同步方向已反：实为 origin 领先 upstream）。需归档并更新队列。
 - **状态**: pending
 - **优先级**: P1
-- **负责人**: Worker
+- **负责人**: Planner
 
-### TASK-ITER10-004: 评估 query.rs TODO 并形成改进建议
-- **描述**: query.rs 中有 8 个 TODO，分布在上下文压缩、shell 问题、memory_content 等处。评估可行性和优先级，形成改进建议。
+### TASK-ITER11-003: 分析 upstream FETCH_HEAD 新提交
+- **描述**: upstream FETCH_HEAD 包含 9 个新提交：PR #42 UNC prefix 修复、PR #40 null数组修复、PR #37 prompt子命令等。评估是否值得向 ValveOS 回迁。
 - **状态**: pending
 - **优先级**: P2
-- **负责人**: Worker
-- **产出**: 在 tasks/planner/backlog.md 中添加改进条目
+- **负责人**: Coordinator → Worker
+- **产出**: 评估报告写入 tasks/planner/backlog.md
 
 ---
 
@@ -57,4 +56,10 @@
 
 ## 已完成任务
 
-<!-- 已完成的任务 -->
+### TASK-ITER10-002: 同步 upstream/main → origin/main
+- **状态**: frozen（归档）
+- **原因**: 方向已反，origin 实际领先 upstream，非 ValveOS 目标
+
+### TASK-ITER10-003: 清理未追踪的 test/ 目录
+- **状态**: frozen（归档）
+- **原因**: test/ 已通过 .gitignore 处理
