@@ -46,6 +46,13 @@
 - **负责人**: Coordinator → Worker
 - **产出**: 评估报告写入 tasks/planner/backlog.md
 
+### TASK-ITER11-004: 调查测试失败
+- **描述**: 测试 `tests::slash_model_with_argument_in_inline_mode_updates_status_without_transcript_note` 失败。预期 "Model set to test-model"，实际 "Failed to switch model"。inline_mode=true 时 model switch 失败。
+- **状态**: pending
+- **优先级**: P0
+- **负责人**: Coordinator → Worker
+- **分析方向**: 检查 test_app 是否缺少 mock config，或检查 inline_mode 下 model switch 逻辑是否缺陷
+
 ---
 
 ## 进行中任务

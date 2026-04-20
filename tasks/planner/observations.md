@@ -6,6 +6,22 @@
 
 ## 最近观察
 
+### 2026-04-21 04:43 观察
+- **项目状态**: 需关注 — 1个测试失败
+- **关键发现**:
+  - 编译状态: ✅ 通过 (cargo check)
+  - 测试状态: ❌ 1 failed (98 passed, 1 failed)
+    - 失败测试: `tests::slash_model_with_argument_in_inline_mode_updates_status_without_transcript_note`
+    - 错误: `assertion failed: (left == right)` - 预期 "Model set to test-model"，实际 "Failed to switch model"
+  - Git状态: origin/main 领先，工作区有未提交更改
+    - 未提交: tasks/coordinator/assignments.md, tasks/shared/inbox/coordinator.md
+    - 未追踪: tasks/planner/plans/2026-04-21-iteration-11-plan.md, tasks/shared/inbox/worker-001.md, tasks/shared/inbox/worker-002.md
+  - upstream remote tracking 在 sandbox 中不持久化，FETCH_HEAD 反映 origin 而非 upstream
+- **决策依据**: 测试失败需调查；工作区未提交；upstream 分化已确认
+- **风险/注意**: 
+  - 测试失败可能阻塞 CI；需确认是测试问题还是代码问题
+  - upstream fetch 后 tracking ref 失效问题持续存在
+
 ### 2026-04-21 03:50 观察
 - **项目状态**: 健康 — 编译通过、测试通过（251 tests）、工作区有未提交更改
 - **关键发现**:

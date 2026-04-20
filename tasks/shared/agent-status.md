@@ -10,14 +10,14 @@
 | Agent | 最近活跃 | 当前状态 | 等待唤醒 |
 |-------|----------|----------|----------|
 | Planner | 2026-04-21T03:50:00Z | 沉睡 | — |
-| Coordinator | 2026-04-21T04:04:53Z | 待机 | Worker |
-| Worker-001 | - | 待唤醒 | Coordinator |
-| Worker-002 | - | 待唤醒 | Coordinator |
-| Worker-003 | - | 未启动 | Coordinator |
+| Coordinator | 2026-04-21T04:50:43Z | 待机 | Worker |
+| Worker-001 | 2026-04-21T04:54:56Z | 活跃 | Coordinator |
+| Worker-002 | - | 进行中 | — |
+| Worker-003 | - | 未启动 | — |
 | PR Manager | - | 未启动 | Worker |
 | Maintainer | - | 未启动 | 自动触发(3任务/24h/连续失败) |
 | Housekeeper | - | 未启动 | PR合并后/24h安全网 |
-| COO | - | 未启动 | - |
+| COO | - | 未启动 | — |
 
 ### 审批类任务格式
 
@@ -43,6 +43,7 @@
 | TASK-ITER11-001 | 提交工作区清理 | completed | Worker-001 | P1 |
 | TASK-ITER11-002 | 归档 Iteration 10 冻结任务 | pending | Planner | P1 |
 | TASK-ITER11-003 | 分析 upstream FETCH_HEAD 新提交 | in_progress | Worker-002 | P2 |
+| TASK-ITER11-004 | 调查测试失败: slash_model_with_argument_in_inline_mode_updates_status_without_transcript_note | completed | Worker-001 | P0 |
 
 ### 历史迭代（已结束）
 
@@ -71,6 +72,7 @@
 | 2026-04-20 15:23 | 系统 | ValveOS 基础建设 spec | v0.2.0 就绪 |
 | 2026-04-20 21:00 | 系统 | 运行时基础设施加固 | 进行中 |
 | 2026-04-21 04:04 | Coordinator | 演练模式 | 任务已分配给 Worker |
+| 2026-04-21 04:50 | Coordinator | 演练模式 | TASK-ITER11-004 已分配给 Worker-001 |
 
 ## 使用说明
 

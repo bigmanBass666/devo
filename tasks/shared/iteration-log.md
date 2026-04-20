@@ -17,6 +17,7 @@
 | TASK-ITER11-001 | 提交工作区清理 | Coordinator→Worker | P1 | pending |
 | TASK-ITER11-002 | 归档 Iteration 10 冻结任务 | Planner | P1 | pending |
 | TASK-ITER11-003 | 分析 upstream FETCH_HEAD 新提交 | Coordinator→Worker | P2 | pending |
+| TASK-ITER11-004 | 调查测试失败: slash_model test | Coordinator→Worker | P0 | pending |
 
 ### 执行记录
 
@@ -24,6 +25,7 @@
 |------|------|
 | 2026-04-21T03:50:00Z | Planner 启动 Iteration 11 |
 | 2026-04-21T03:50:00Z | 下发 3 个任务到 Coordinator |
+| 2026-04-21T04:43:00Z | Planner 续：发现测试失败，新增 TASK-ITER11-004 |
 
 ---
 
