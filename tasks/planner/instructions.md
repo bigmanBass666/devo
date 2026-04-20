@@ -235,6 +235,17 @@
 你必须在以下操作时记录日志到 `tasks/logs/planner.log`：
 
 ### 日志格式
+
+> ⚠️ **时间纪律**：禁止编造时间。所有时间戳必须来自 $NOW 变量（醒来时通过 Get-Date 获取）。同一会话内允许时间戳相同（精度到分钟即可）。绝对禁止 AI 自行推断当前时间。
+
+| 用途 | 格式 | 示例 |
+|------|------|------|
+| planner.log | `YYYY-MM-DD HH:MM:SS` | `2026-04-20 09:23:57` |
+| observations.md 标题 | `YYYY-MM-DD HH:MM 观察` | `2026-04-20 09:23 观察` |
+| session-reports 表格 | `YYYY-MM-DD HH:MM` | `2026-04-20 09:23` |
+| inbox 消息 | ISO 8601 | `2026-04-20T09:23:57+08:00` |
+| iteration-log | `YYYY-MM-DD` | `2026-04-20` |
+
 ```
 [YYYY-MM-DD HH:MM:SS] [Planner] [LEVEL] MESSAGE
   - detail: ...
@@ -320,6 +331,7 @@
 
 当你被用户唤醒时，**必须按顺序执行**：
 
+0. **获取真实时间**：执行 `$NOW = Get-Date -Format "yyyy-MM-dd HH:mm:ss"` 获取当前系统时间。后续所有日志、观察记录、会话摘要中的时间戳必须使用此变量，禁止编造时间。
 1. 读取 `tasks/shared/inbox/planner.md` — 检查是否有未处理消息
 2. 读取 `tasks/shared/agent-status.md` — 了解全局状态和任务看板
 3. 读取 `tasks/shared/iteration-log.md` — 了解上次迭代进度

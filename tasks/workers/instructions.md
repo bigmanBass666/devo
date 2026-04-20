@@ -257,6 +257,8 @@ chore: run cargo clippy --fix                         ❌ 太懒
   - detail: ...
 ```
 
+> ⚠️ **时间纪律**：禁止编造时间。所有时间戳必须来自 $NOW 变量（醒来时通过 Get-Date 获取）。
+
 ### 必须记录的事件
 
 1. **认领任务**
@@ -321,6 +323,8 @@ chore: run cargo clippy --fix                         ❌ 太懒
 ### 醒来后第一件事
 
 当你被用户唤醒时，**必须首先执行**：
+
+0. **获取真实时间**：执行 `$NOW = Get-Date -Format "yyyy-MM-dd HH:mm:ss"` 获取当前系统时间。后续所有带时间戳的记录（日志、inbox消息、状态更新等）必须使用此变量，禁止编造时间。
 
 1. 读取 `tasks/shared/inbox/worker.md` — 检查是否有未处理消息
 2. 如有未处理消息 → 标记为"已处理"并处理
