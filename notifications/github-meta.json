@@ -1,7 +1,7 @@
 {
-  "last_notification_timestamp": "2026-04-18T20:55:34Z",
-  "last_read_timestamp": "1970-01-01T00:00:00Z",
-  "unread_count": 100,
-  "collected_at": "2026-04-18T20:55:34Z",
-  "summary": "No new activity since last check"
+  "last_notification_timestamp": "2026-04-20T13:32:00Z",
+  "last_read_timestamp": "2026-04-20T13:32:00Z",
+  "unread_count": 0,
+  "collected_at": "2026-04-20T13:32:00Z",
+  "summary": "Notification queue cleared - workflow disabled to stop email spam"
 }

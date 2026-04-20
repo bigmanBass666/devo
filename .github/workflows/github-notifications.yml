@@ -1,221 +1,226 @@
-name: GitHub Activity Notifications
-
-on:
-  workflow_dispatch:
-
-permissions:
-  contents: write
-  pull-requests: read
-  issues: read
-
-jobs:
-  collect-notifications:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup gh CLI
-        uses: actions/setup-go@v5
-
-      - name: Read last notification timestamp
-        id: meta
-        run: |
-          if [ -f "notifications/github-meta.json" ]; then
-            LAST_TS=$(jq -r '.last_notification_timestamp // "1970-01-01T00:00:00Z"' "notifications/github-meta.json")
-            echo "last_timestamp=${LAST_TS}" >> "$GITHUB_OUTPUT"
-          else
-            echo "last_timestamp=1970-01-01T00:00:00Z" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Collect upstream commits (public API)
-        id: upstream
-        env:
-          SINCE: ${{ steps.meta.outputs.last_timestamp }}
-        run: |
-          mkdir -p notifications
-          
-          RAW=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/commits?since=${SINCE}&per_page=100")
-          
-          COMMITS=$(echo "$RAW" | 
-            jq '[.[] | select(.commit.committer.date > env.SINCE) | {
-              timestamp: .commit.committer.date,
-              type: "upstream_commit",
-              repo: "7df-lab/claw-code-rust",
-              hash: .sha[0:7],
-              message: (.commit.message | split("\n")[0]),
-              author: .commit.author.name
-            }]')
-          
-          if [ -n "$COMMITS" ] && [ "$COMMITS" != "[]" ] && [ "$COMMITS" != "null" ]; then
-            echo "$COMMITS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
-            UPSTREAM_COUNT=$(echo "$COMMITS" | jq 'length')
-            echo "Collected ${UPSTREAM_COUNT} upstream commits"
-            echo "has_upstream=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No new upstream commits since ${SINCE}"
-            echo "has_upstream=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Collect our PR activity (gh CLI with GITHUB_TOKEN)
-        id: pr_activity
-        env:
-          SINCE: ${{ steps.meta.outputs.last_timestamp }}
-        run: |
-          PR_DATA=$(gh api repos/bigmanBass666/claw-code-rust/pulls \
-            --method GET \
-            --paginate \
-            --state all \
-            --jq ".[] | select(.updated_at > \"$SINCE\") | {
-              timestamp: .updated_at,
-              type: \"pr_updated\",
-              repo: \"bigmanBass666/claw-code-rust\",
-              pr_number: .number,
-              title: .title,
-              state: .state,
-              user_login: .user.login
-            }" 2>/dev/null || echo "")
-          
-          if [ -n "$PR_DATA" ] && [ "$PR_DATA" != "[]" ]; then
-            echo "$PR_DATA" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
-            
-            PR_COUNT=$(echo "$PR_DATA" | jq 'length')
-            echo "Found ${PR_COUNT} updated PRs"
-            
-            for PR_NUM in $(echo "$PR_DATA" | jq -r '.[].pr_number'); do
-              COMMENTS=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/pulls/${PR_NUM}/comments?since=${SINCE}&per_page=100" | 
-                jq '[.[] | {
-                  timestamp: .created_at,
-                  type: "pr_review_comment",
-                  repo: "7df-lab/claw-code-rust",
-                  pr_number: '"$PR_NUM"',
-                  commenter: .user.login,
-                  comment_preview: (.body[0:200])
-                }]')
-              
-              if [ -n "$COMMENTS" ] && [ "$COMMENTS" != "[]" ] && [ "$COMMENTS" != "null" ]; then
-                echo "$COMMENTS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
-                COMMENT_COUNT=$(echo "$COMMENTS" | jq 'length')
-                echo "  PR #${PR_NUM}: ${COMMENT_COUNT} review comments"
-              fi
-              
-              ISSUE_COMMENTS=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/issues/${PR_NUM}/comments?since=${SINCE}&per_page=100" | 
-                jq '[.[] | {
-                  timestamp: .created_at,
-                  type: "pr_comment",
-                  repo: "7df-lab/claw-code-rust",
-                  pr_number: '"$PR_NUM"',
-                  commenter: .user.login,
-                  comment_preview: (.body[0:200])
-                }]')
-              
-              if [ -n "$ISSUE_COMMENTS" ] && [ "$ISSUE_COMMENTS" != "[]" ] && [ "$ISSUE_COMMENTS" != "null" ]; then
-                echo "$ISSUE_COMMENTS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
-                ICOUNT=$(echo "$ISSUE_COMMENTS" | jq 'length')
-                echo "  PR #${PR_NUM}: ${ICOUNT} issue comments"
-              fi
-            done
-            
-            echo "has_pr=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No PR activity since ${SINCE}"
-            echo "has_pr=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Collect upstream issues activity (public API)
-        id: issue_activity
-        env:
-          SINCE: ${{ steps.meta.outputs.last_timestamp }}
-        run: |
-          ISSUES=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/issues?state=all&since=${SINCE}&per_page=100&sort=updated&direction=desc" | 
-            jq '[.[] | select(.pull_request == null) | {
-              timestamp: .updated_at,
-              type: (if .created_at == .updated_at then "issue_created" else "issue_updated" end),
-              repo: "7df-lab/claw-code-rust",
-              issue_number: .number,
-              title: .title,
-              labels: [.labels[].name],
-              state: .state
-            }]')
-          
-          if [ -n "$ISSUES" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "null" ]; then
-            echo "$ISSUES" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
-            ISSUE_COUNT=$(echo "$ISSUES" | jq 'length')
-            echo "Collected ${ISSUE_COUNT} issue activities"
-            echo "has_issues=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No issue activity since ${SINCE}"
-            echo "has_issues=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Merge and update notification files
-        run: |
-          mkdir -p notifications
-          
-          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          LAST_READ="1970-01-01T00:00:00Z"
-          PREV_COUNT=0
-          
-          if [ -f "notifications/github-meta.json" ]; then
-            LAST_READ=$(jq -r '.last_read_timestamp // "1970-01-01T00:00:00Z"' "notifications/github-meta.json" 2>/dev/null || echo "1970-01-01T00:00:00Z")
-            PREV_COUNT=$(jq -r '.unread_count // 0' "notifications/github-meta.json" 2>/dev/null || echo 0)
-          fi
-          
-          if [ -f "notifications/github-activity.jsonl.tmp" ] && [ -s "notifications/github-activity.jsonl.tmp" ]; then
-            cat "notifications/github-activity.jsonl.tmp" >> "notifications/github-activity.jsonl" 2>/dev/null || mv "notifications/github-activity.jsonl.tmp" "notifications/github-activity.jsonl"
-            
-            UNREAD_COUNT=$(wc -l < "notifications/github-activity.jsonl" | tr -d ' ')
-            
-            jq -n \
-              --arg ts "$NOW" \
-              --arg last_read "$LAST_READ" \
-              --argjson count "$UNREAD_COUNT" \
-              --arg collected "$NOW" \
-              '{
-                last_notification_timestamp: $ts,
-                last_read_timestamp: $last_read,
-                unread_count: $count,
-                collected_at: $collected,
-                summary: ("Collected at " + $collected + ", " + ($count | tostring) + " events")
-              }' > "notifications/github-meta.json"
-              
-            echo "Total events in jsonl: ${UNREAD_COUNT}"
-          else
-            jq -n \
-              --arg ts "$NOW" \
-              --arg last_read "$LAST_READ" \
-              --argjson count "$PREV_COUNT" \
-              --arg collected "$NOW" \
-              '{
-                last_notification_timestamp: $ts,
-                last_read_timestamp: $last_read,
-                unread_count: $count,
-                collected_at: $collected,
-                summary: "No new activity since last check"
-              }' > "notifications/github-meta.json"
-              
-            echo "No new activity to record"
-          fi
-          
-          rm -f "notifications/github-activity.jsonl.tmp"
-
-      - name: Cleanup old entries (keep 30 days)
-        run: |
-          rm -f notifications/debug-log.txt
-          if [ -f "notifications/github-activity.jsonl" ]; then
-            CUTOFF=$(date -d "-30 days" -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -v-30d -u +"%Y-%m-%dT%H:%M:%SZ")
-            jq -c "select(.timestamp >= \"${CUTOFF}\")" "notifications/github-activity.jsonl" > "notifications/github-activity.jsonl.new" 2>/dev/null || true
-            mv -f "notifications/github-activity.jsonl.new" "notifications/github-activity.jsonl" 2>/dev/null || true
-          fi
-
-      - name: Commit changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add notifications/
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: update GitHub activity notifications"
-            git push origin main
-          fi
+# ⚠️ DISABLED: 2026-04-20 - Stopped email spam loop
+# This workflow was causing continuous email notifications.
+# Re-enable only after fixing the feedback loop issue.
+# See: .trae/specs/fix-notification-email-spam/
+#
+# name: GitHub Activity Notifications
+#
+# on:
+#   workflow_dispatch:
+#
+# permissions:
+#   contents: write
+#   pull-requests: read
+#   issues: read
+#
+# jobs:
+#   collect-notifications:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#         with:
+#           token: ${{ secrets.GITHUB_TOKEN }}
+#
+#       - name: Setup gh CLI
+#         uses: actions/setup-go@v5
+#
+#       - name: Read last notification timestamp
+#         id: meta
+#         run: |
+#           if [ -f "notifications/github-meta.json" ]; then
+#             LAST_TS=$(jq -r '.last_notification_timestamp // "1970-01-01T00:00:00Z"' "notifications/github-meta.json")
+#             echo "last_timestamp=${LAST_TS}" >> "$GITHUB_OUTPUT"
+#           else
+#             echo "last_timestamp=1970-01-01T00:00:00Z" >> "$GITHUB_OUTPUT"
+#           fi
+#
+#       - name: Collect upstream commits (public API)
+#         id: upstream
+#         env:
+#           SINCE: ${{ steps.meta.outputs.last_timestamp }}
+#         run: |
+#           mkdir -p notifications
+#           
+#           RAW=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/commits?since=${SINCE}&per_page=100")
+#           
+#           COMMITS=$(echo "$RAW" | 
+#             jq '[.[] | select(.commit.committer.date > env.SINCE) | {
+#               timestamp: .commit.committer.date,
+#               type: "upstream_commit",
+#               repo: "7df-lab/claw-code-rust",
+#               hash: .sha[0:7],
+#               message: (.commit.message | split("\n")[0]),
+#               author: .commit.author.name
+#             }]')
+#           
+#           if [ -n "$COMMITS" ] && [ "$COMMITS" != "[]" ] && [ "$COMMITS" != "null" ]; then
+#             echo "$COMMITS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+#             UPSTREAM_COUNT=$(echo "$COMMITS" | jq 'length')
+#             echo "Collected ${UPSTREAM_COUNT} upstream commits"
+#             echo "has_upstream=true" >> "$GITHUB_OUTPUT"
+#           else
+#             echo "No new upstream commits since ${SINCE}"
+#             echo "has_upstream=false" >> "$GITHUB_OUTPUT"
+#           fi
+#
+#       - name: Collect our PR activity (gh CLI with GITHUB_TOKEN)
+#         id: pr_activity
+#         env:
+#           SINCE: ${{ steps.meta.outputs.last_timestamp }}
+#         run: |
+#           PR_DATA=$(gh api repos/bigmanBass666/claw-code-rust/pulls \
+#             --method GET \
+#             --paginate \
+#             --state all \
+#             --jq ".[] | select(.updated_at > \"$SINCE\") | {
+#               timestamp: .updated_at,
+#               type: \"pr_updated\",
+#               repo: \"bigmanBass666/claw-code-rust\",
+#               pr_number: .number,
+#               title: .title,
+#               state: .state,
+#               user_login: .user.login
+#             }" 2>/dev/null || echo "")
+#           
+#           if [ -n "$PR_DATA" ] && [ "$PR_DATA" != "[]" ]; then
+#             echo "$PR_DATA" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+#             
+#             PR_COUNT=$(echo "$PR_DATA" | jq 'length')
+#             echo "Found ${PR_COUNT} updated PRs"
+#             
+#             for PR_NUM in $(echo "$PR_DATA" | jq -r '.[].pr_number'); do
+#               COMMENTS=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/pulls/${PR_NUM}/comments?since=${SINCE}&per_page=100" | 
+#                 jq '[.[] | {
+#                   timestamp: .created_at,
+#                   type: "pr_review_comment",
+#                   repo: "7df-lab/claw-code-rust",
+#                   pr_number: '"$PR_NUM"',
+#                   commenter: .user.login,
+#                   comment_preview: (.body[0:200])
+#                 }]')
+#               
+#               if [ -n "$COMMENTS" ] && [ "$COMMENTS" != "[]" ] && [ "$COMMENTS" != "null" ]; then
+#                 echo "$COMMENTS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+#                 COMMENT_COUNT=$(echo "$COMMENTS" | jq 'length')
+#                 echo "  PR #${PR_NUM}: ${COMMENT_COUNT} review comments"
+#               fi
+#               
+#               ISSUE_COMMENTS=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/issues/${PR_NUM}/comments?since=${SINCE}&per_page=100" | 
+#                 jq '[.[] | {
+#                   timestamp: .created_at,
+#                   type: "pr_comment",
+#                   repo: "7df-lab/claw-code-rust",
+#                   pr_number: '"$PR_NUM"',
+#                   commenter: .user.login,
+#                   comment_preview: (.body[0:200])
+#                 }]')
+#               
+#               if [ -n "$ISSUE_COMMENTS" ] && [ "$ISSUE_COMMENTS" != "[]" ] && [ "$ISSUE_COMMENTS" != "null" ]; then
+#                 echo "$ISSUE_COMMENTS" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+#                 ICOUNT=$(echo "$ISSUE_COMMENTS" | jq 'length')
+#                 echo "  PR #${PR_NUM}: ${ICOUNT} issue comments"
+#               fi
+#             done
+#             
+#             echo "has_pr=true" >> "$GITHUB_OUTPUT"
+#           else
+#             echo "No PR activity since ${SINCE}"
+#             echo "has_pr=false" >> "$GITHUB_OUTPUT"
+#           fi
+#
+#       - name: Collect upstream issues activity (public API)
+#         id: issue_activity
+#         env:
+#           SINCE: ${{ steps.meta.outputs.last_timestamp }}
+#         run: |
+#           ISSUES=$(curl -s "https://api.github.com/repos/7df-lab/claw-code-rust/issues?state=all&since=${SINCE}&per_page=100&sort=updated&direction=desc" | 
+#             jq '[.[] | select(.pull_request == null) | {
+#               timestamp: .updated_at,
+#               type: (if .created_at == .updated_at then "issue_created" else "issue_updated" end),
+#               repo: "7df-lab/claw-code-rust",
+#               issue_number: .number,
+#               title: .title,
+#               labels: [.labels[].name],
+#               state: .state
+#             }]')
+#           
+#           if [ -n "$ISSUES" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "null" ]; then
+#             echo "$ISSUES" | jq -c '.[]' >> "notifications/github-activity.jsonl.tmp"
+#             ISSUE_COUNT=$(echo "$ISSUES" | jq 'length')
+#             echo "Collected ${ISSUE_COUNT} issue activities"
+#             echo "has_issues=true" >> "$GITHUB_OUTPUT"
+#           else
+#             echo "No issue activity since ${SINCE}"
+#             echo "has_issues=false" >> "$GITHUB_OUTPUT"
+#           fi
+#
+#       - name: Merge and update notification files
+#         run: |
+#           mkdir -p notifications
+#           
+#           NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+#           LAST_READ="1970-01-01T00:00:00Z"
+#           PREV_COUNT=0
+#           
+#           if [ -f "notifications/github-meta.json" ]; then
+#             LAST_READ=$(jq -r '.last_read_timestamp // "1970-01-01T00:00:00Z"' "notifications/github-meta.json" 2>/dev/null || echo "1970-01-01T00:00:00Z")
+#             PREV_COUNT=$(jq -r '.unread_count // 0' "notifications/github-meta.json" 2>/dev/null || echo 0)
+#           fi
+#           
+#           if [ -f "notifications/github-activity.jsonl.tmp" ] && [ -s "notifications/github-activity.jsonl.tmp" ]; then
+#             cat "notifications/github-activity.jsonl.tmp" >> "notifications/github-activity.jsonl" 2>/dev/null || mv "notifications/github-activity.jsonl.tmp" "notifications/github-activity.jsonl"
+#             
+#             UNREAD_COUNT=$(wc -l < "notifications/github-activity.jsonl" | tr -d ' ')
+#             
+#             jq -n \
+#               --arg ts "$NOW" \
+#               --arg last_read "$LAST_READ" \
+#               --argjson count "$UNREAD_COUNT" \
+#               --arg collected "$NOW" \
+#               '{
+#                 last_notification_timestamp: $ts,
+#                 last_read_timestamp: $last_read,
+#                 unread_count: $count,
+#                 collected_at: $collected,
+#                 summary: ("Collected at " + $collected + ", " + ($count | tostring) + " events")
+#               }' > "notifications/github-meta.json"
+#               
+#             echo "Total events in jsonl: ${UNREAD_COUNT}"
+#           else
+#             jq -n \
+#               --arg ts "$NOW" \
+#               --arg last_read "$LAST_READ" \
+#               --argjson count "$PREV_COUNT" \
+#               --arg collected "$NOW" \
+#               '{
+#                 last_notification_timestamp: $ts,
+#                 last_read_timestamp: $last_read,
+#                 unread_count: $count,
+#                 collected_at: $collected,
+#                 summary: "No new activity since last check"
+#               }' > "notifications/github-meta.json"
+#               
+#             echo "No new activity to record"
+#           fi
+#           
+#           rm -f "notifications/github-activity.jsonl.tmp"
+#
+#       - name: Cleanup old entries (keep 30 days)
+#         run: |
+#           rm -f notifications/debug-log.txt
+#           if [ -f "notifications/github-activity.jsonl" ]; then
+#             CUTOFF=$(date -d "-30 days" -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -v-30d -u +"%Y-%m-%dT%H:%M:%SZ")
+#             jq -c "select(.timestamp >= \"${CUTOFF}\")" "notifications/github-activity.jsonl" > "notifications/github-activity.jsonl.new" 2>/dev/null || true
+#             mv -f "notifications/github-activity.jsonl.new" "notifications/github-activity.jsonl" 2>/dev/null || true
+#           fi
+#
+#       - name: Commit changes
+#         run: |
+#           git config user.name "github-actions[bot]"
+#           git config user.email "github-actions[bot]@users.noreply.github.com"
+#           git add notifications/
+#           if ! git diff --cached --quiet; then
+#             git commit -m "chore: update GitHub activity notifications"
+#             git push origin main
+#           fi
