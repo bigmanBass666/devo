@@ -1,7 +1,0 @@
-- [x] YAML syntax is valid
-- [x] gh CLI installation script is correct
-- [x] All jq commands use --arg syntax for variables
-- [x] All critical commands have error handling
-- [x] Commit message includes [skip ci]
-- [x] Validation script runs successfully
-- [x] No remaining env.SINCE references in jq

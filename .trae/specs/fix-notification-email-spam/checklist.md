@@ -1,6 +1,0 @@
-- [x] github-notifications.yml triggers are commented out
-- [x] Warning comment added explaining the disable reason
-- [x] github-meta.json timestamp is reset
-- [x] github-activity.jsonl is cleared
-- [x] Changes are committed with [skip ci] in commit message
-- [x] Changes are pushed to remote

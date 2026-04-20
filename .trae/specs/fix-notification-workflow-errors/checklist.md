@@ -1,6 +1,0 @@
-- [x] gh CLI is properly installed (not Go)
-- [x] jq environment variables are correctly interpolated
-- [x] Error handling guards are in place
-- [x] Commit message includes [skip ci]
-- [x] Workflow is uncommented and valid YAML
-- [x] Changes are committed and pushed
