@@ -12,6 +12,14 @@
 | 2026-04-19 23:20 | AGENTS.md 路由化重构（agents-md-router-refactor spec） | AGENTS.md 从静态定义改为触发→动作路由表 | 见下方详情 | 1 文件改动 | ✅ 完成 |
 | 2026-04-20 02:25 | 路由化深度加固（harden-router-system spec） | 路由系统免疫系统加固 | 见下方详情 | 6 文件改动 | ✅ 完成 |
 
+---
+
+## ⏬ 系统重置分隔线 — 2026-04-20 (Iteration 9)
+
+> 以下为重置前历史记录。Iteration 8 已废弃，Iteration 9 从空白开始。
+
+---
+
 ### 2026-04-19 20:53 评估详情
 
 **评估方法**: skill-creator 正式评估流程，5 个测试场景 × 2 版本（with-skill vs old_skill baseline）
