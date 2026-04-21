@@ -179,6 +179,30 @@ COO 是单会话模式的**主要使用者之一**（但不是唯一）。单会
 5. 记录日志到 `tasks/logs/coo.log`
 6. **写会话报告** — 按 `tasks/shared/session-report-template.md` 模板，在 `tasks/shared/session-reports/coo.md` 追加报告。普通模式用简版，演练模式用详版（含协议合规检查）。
 
+> ⚠️ **模板铁律**：`session-report-template.md` 是**唯一模板来源**。禁止使用任何内嵌的旧格式示例。
+>
+> 普通模式（简版）——使用模板中的简版格式，包含执行动作和发现的问题：
+> ```
+> ## [YYYY-MM-DD HH:MM] [会话目标]
+>
+> ### 执行动作
+> - [x] 动作1: 描述
+>
+> ### 发现的问题
+> - [问题描述]（严重程度: P0/P1/P2）
+>
+> ---
+> ```
+>
+> ⚠️ **协议合规字段（必须填写）**：
+> 无论简版还是详版，报告**必须**包含以下 4 个客观事实字段，填入"协议合规"节：
+> - `actual_first_output`: AI 本会话**实际的第一句输出**原文（逐字记录）
+> - `pre_opening_exists`: 开场白前是否有任何输出（含空行/工具调用/元叙述）（是/否）
+> - `opening_verbatim_match`: actual_first_output 是否与 standard-openings.md 中 COO 标准开场白**完全一致**（是/否）
+> - `iron_door_compliance`: 会话最后一句输出是否仅为"请唤醒 [Agent名]" + 原因（是/否）
+>
+> 演练模式（详版）——用户唤醒时附加"演练模式"则使用模板中的详版格式。
+
 ### 消息写入规则
 
 如果需要通知其他Agent，向其inbox写入消息：
