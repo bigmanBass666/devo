@@ -28,10 +28,15 @@
 - [ ] 动作2: 描述（未完成）
 
 ### 协议合规
-- [ ] 角色切换: 是否以正确 Agent 身份执行
-- [ ] 铁门协议: 是否只输出"请唤醒 [Agent]"
+
+> ⚠️ **以下字段为客观事实记录，不是自评**。/rr 复盘时将用这些字段验证协议合规性，不依赖 Agent 的自我判断。
+
+- [ ] `actual_first_output`: AI 本会话实际的第一句输出原文（逐字记录，用于验证标准开场白是否原文）
+- [ ] `pre_opening_exists`: 开场白前是否有任何输出（含空行/工具调用/元叙述），如有则记录内容
+- [ ] `opening_verbatim_match`: actual_first_output 是否与 standard-openings.md 中对应 Agent 的开场白完全一致（是/否）
+- [ ] `iron_door_compliance`: 会话最后一句输出是否仅为"请唤醒 [Agent名]" + 原因（是/否，如否记录实际结尾）
 - [ ] 日志记录: 是否写入对应 .log 文件
-- [ ] 状态更新: 是否更新 agent-status.md
+- [ ] 状态更新: 是否更新 agent-status.md / workers/status.md
 
 ### 发现的问题
 - [问题描述]（严重程度: P0/P1/P2）
