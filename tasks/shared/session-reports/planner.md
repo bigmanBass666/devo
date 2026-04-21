@@ -1,6 +1,7 @@
 # Planner 会话报告
 
 > 每次 Agent 会话结束后，按 `tasks/shared/session-report-template.md` 模板追加报告。COO 和 /rehearsal-review 读取此文件。
+> ⚠️ **时间戳说明**：2026-04-21 之前的时间戳为近似值。
 
 ## 报告记录
 
