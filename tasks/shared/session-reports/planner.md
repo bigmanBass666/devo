@@ -5,6 +5,8 @@
 
 ## 报告记录
 
+| 2026-04-21 14:14 | /workflow sync-upstream | 分析upstream分化：origin/main领先196个ValveOS特有提交，upstream/main领先8个PR修复。TASK-ITER11-007已下发Coordinator分析这8个PR的回迁策略 | upstream fetch后tracking ref不持久化（sandbox限制），使用临时分支main_upstream绕过 | 无 |
+
 | 2026-04-21 03:50 | Iteration 11 启动 🎭 演练 | 下发 3 个任务：TASK-ITER11-001（工作区清理）/ TASK-ITER11-002（归档Iteration 10）/ TASK-ITER11-003（分析upstream新提交） | 无 | 发现 upstream fetch 后 tracking ref 在 sandbox 中立即失效，需用 FETCH_HEAD 替代 |
 
 ## [2026-04-21 04:43] [Iteration 11 续 - 演练模式] 🎭 演练

@@ -59,6 +59,13 @@
 
 <!-- 正在执行的任务 -->
 
+### TASK-ITER11-007: 评估 upstream PR 应用策略（sync-upstream 工作流）
+- **描述**: upstream main (82e2d40) 领先 origin/main 8个提交，对应 PR #42/#40/#37/#34/#32/#33/#38/#39。ValveOS 是独立 fork，origin 领先 196 个 ValveOS 特有提交。Worker 需分析这 8 个 upstream PR 是否值得回迁到 ValveOS，以及如何处理冲突。
+- **状态**: pending
+- **优先级**: P1
+- **负责人**: Coordinator → Worker
+- **产出**: 评估报告写入 tasks/planner/backlog.md，包含：每个 PR 的价值评级（高/中/低）、冲突风险、建议操作（回迁/忽略/本地化）
+
 ---
 
 ## 已完成任务

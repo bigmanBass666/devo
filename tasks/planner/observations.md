@@ -6,6 +6,23 @@
 
 ## 最近观察
 
+### 2026-04-21 14:14 观察
+- **项目状态**: 分化 — origin领先196个ValveOS特有提交，upstream领先8个PR修复
+- **关键发现**:
+  - Git状态: main分支，origin/main最新141c769，工作区干净
+  - upstream分化: main_upstream (82e2d40) 领先 origin/main 8个提交
+    - PR #42: UNC path home_dir.rs 修复
+    - PR #40: null数组 OpenAI 响应修复
+    - PR #37: prompt子命令、--model flag、doctor命令
+    - PR #34: dev/wang 分支合并
+    - PR #32/33/38/39: 其他上游修复
+  - origin/main 领先 main_upstream 196个提交（ValveOS系统文件/Agent coordination）
+  - upstream fetch后tracking ref在sandbox中不持久化（已知限制）
+- **决策依据**: sync-upstream工作流需评估这8个upstream PR的优先级和可行性
+- **风险/注意**: 
+  - ValveOS fork特性决定了无法简单同步上游
+  - upstream PR可能包含与ValveOS冲突的改动
+
 ### 2026-04-21 04:43 观察
 - **项目状态**: 需关注 — 1个测试失败
 - **关键发现**:

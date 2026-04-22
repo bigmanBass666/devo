@@ -9,7 +9,7 @@
 
 | Agent | 最近活跃 | 当前状态 | 等待唤醒 |
 |-------|----------|----------|----------|
-| Planner | 2026-04-21T03:50:00Z | 沉睡 | — |
+| Planner | 2026-04-21T14:14:00Z | 沉睡 | — |
 | Coordinator | 2026-04-21T05:09:58Z | 待机 | — |
 | Worker-001 | 2026-04-21T05:09:58Z | 待机 | Coordinator |
 | Worker-002 | - | 进行中 | — |
@@ -17,7 +17,7 @@
 | PR Manager | - | 未启动 | Worker |
 | Maintainer | 2026-04-21T04:59:10Z | 沉睡 | — |
 | Housekeeper | 2026-04-21T05:32:19Z | 沉睡 | — |
-| COO | 2026-04-21T05:15:06Z | 沉睡 | — |
+| COO | 2026-04-21T16:19:15Z | 沉睡 | — |
 
 ### 审批类任务格式
 
@@ -42,10 +42,11 @@
 |--------|------|------|--------|--------|
 | TASK-ITER11-001 | 提交工作区清理 | completed | Worker-001 | P1 |
 | TASK-ITER11-002 | 归档 Iteration 10 冻结任务 | pending | Planner | P1 |
-| TASK-ITER11-003 | 分析 upstream FETCH_HEAD 新提交 | in_progress | Worker-002 | P2 |
+| TASK-ITER11-003 | 分析 upstream FETCH_HEAD 新提交 | pending | Coordinator→Worker | P2 |
 | TASK-ITER11-004 | 调查测试失败: slash_model_with_argument_in_inline_mode_updates_status_without_transcript_note | completed | Worker-001 | P0 |
 | TASK-ITER11-005 | 实施 IMP-2026-0421-001: 日志基础设施 | pending | 待协调 | P1 |
 | TASK-ITER11-006 | 实施 IMP-2026-0421-002: Worker心跳机制 | pending | 待协调 | P1 |
+| TASK-ITER11-007 | 评估 upstream PR 应用策略（sync-upstream 工作流） | pending | Coordinator→Worker | P1 |
 
 ### 历史迭代（已结束）
 
