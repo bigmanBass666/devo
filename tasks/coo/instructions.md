@@ -30,7 +30,8 @@
 ### 1. 文档维护
 
 可修改的系统文档范围：
-- `AGENTS.md` — ValveOS 宪法
+- `AGENTS.md` — 项目基础规则（安全铁律、提交纪律、社交边界）
+- `docs/agent-rules/valveos-protocol.md` — ValveOS 完整协议（按需激活）
 - `tasks/ARCHITECTURE.md` — 完整架构文档
 - `tasks/*/instructions.md` — 各 Agent 行为规范
 - `docs/agent-rules/cli-operations.md` — CLI 操作规范

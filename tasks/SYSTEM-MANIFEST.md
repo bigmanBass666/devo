@@ -137,9 +137,9 @@
 | 信息类型 | 🔑 唯一声明处 | 其他文件的处理方式 |
 |---------|-------------|-------------------|
 | Agent 清单（ID/名称/类型/层级） | **本文件 → Agents 表** | 各 `instructions.md` 用角色标签行引用；ARCHITECTURE.md 架构图保留可视化展示但标注派生 |
-| 架构模型（名称/结构） | **本文件 → Architecture Model** | AGENTS.md 用一行概要引用；ARCHITECTURE.md 标题引用 |
+| 架构模型（名称/结构） | **本文件 → Architecture Model** | valveos-protocol.md 路由表引用；ARCHITECTURE.md 标题引用 |
 | 核心概念（定义） | **ARCHITECTURE.md → 核心概念章节** | 本文件只存索引；instructions.md 使用术语但不重新定义 |
-| 功能索引 | **本文件 → Feature Index** | AGENTS.md 引用（内联简版或"详见 Manifest"） |
+| 功能索引 | **本文件 → Feature Index** | valveos-protocol.md 路由表引用 |
 | 文件追踪规则 | **本文件 → File Registry** | AGENTS.md 不再包含追踪表（完全迁移到此处） |
 | inbox 文件列表 | **本文件 → Agents 表（Inbox 路径列）** | ARCHITECTURE.md 通信机制图从本表派生，不再独立维护 |
 | 日志文件列表 | **本 File Registry 或 ARCHITECTURE.md 日志系统图** | 两处应一致，以本文件为准 |
@@ -147,11 +147,13 @@
 | 标准开场白 | **ARCHITECTURE.md → 标准开场白章节** ⚠️ | 本文件引用其位置（注：该章节尚待创建，见 audit-log 评估记录） |
 | Git 安全规则 | **AGENTS.md → 提交纪律章节** | 各 instructions.md 可引用但不重复完整规则 |
 | PR 质量铁律 | **AGENTS.md → PR 质量铁律章节** | pr-manager/instructions.md 引用具体条目 |
-| AGENTS.md 路由条目 | **AGENTS.md → 路由表章节** | 其他文件不重复定义路由；SYSTEM-MANIFEST.md Feature Index 与路由表保持覆盖一致 |
+| ValveOS 路由条目 | **valveos-protocol.md → 路由表章节** | 其他文件不重复定义路由；本文件 Feature Index 与路由表保持覆盖一致 |
+| 铁门协议 | **valveos-protocol.md → 铁门协议章节** | AGENTS.md 不再包含铁门协议 |
+| 角色切换协议 | **valveos-protocol.md → 角色切换协议章节** | AGENTS.md 不再包含角色切换协议 |
 
 ---
 
-> **路由覆盖原则**: AGENTS.md 路由表应覆盖系统中所有"用户可能问到的概念"。当新增重要概念时，应同步在路由表添加对应条目。路由条目的触发词应包含用户最可能使用的关键词变体。
+> **路由覆盖原则**: valveos-protocol.md 路由表应覆盖系统中所有"用户可能问到的概念"。当新增重要概念时，应同步在路由表添加对应条目。路由条目的触发词应包含用户最可能使用的关键词变体。
 
 > **去品牌化原则**: 品牌名 "ValveOS" 只在 AGENTS.md（标题+元数据行）和本文件（标题行）中硬编码，共约 4 处。其他文件（shared/*.md、instructions.md 等）只描述功能，不硬编码品牌名。需要引用系统名时使用"本系统"或引用 AGENTS.md 标题行。改名时只需修改 AGENTS.md + 本文件。
 
@@ -159,24 +161,11 @@
 
 ## AGENTS.md 章节分类原则
 
+> ⚠️ v0.4.0 按需激活架构后，AGENTS.md 仅包含基础规则。ValveOS 专属章节已迁移至 `docs/agent-rules/valveos-protocol.md`。
+
 AGENTS.md 的章节分为两类，遵循不同的设计模式：
 
-### 可路由化章节（信息查找类）
-
-用户问"X 是什么"→ 路由告诉 AI 去哪找答案。
-
-特征：描述事实、指向外部文件、可被触发词匹配。
-
-| 章节名 | 路由目标 |
-|--------|----------|
-| 架构速查 | SYSTEM-MANIFEST.md#Agents |
-| 单会话模式 | coo/instructions.md#单会话模式 |
-| 待机模式 | cli-operations.md#待机模式（状态标记+断点续传） |
-| 操作指引 | 多目标子路由表 |
-| 错误恢复 | 按错误类型分发 |
-| 审计触发 | valveos-audit skill |
-
-### 不可路由化章节（行为约束类）
+### 基础规则章节（始终生效）
 
 告诉 AI "必须/禁止做 X" → 这本身就是答案。
 
@@ -184,15 +173,19 @@ AGENTS.md 的章节分为两类，遵循不同的设计模式：
 
 | 章节名 | 约束类型 |
 |--------|----------|
-| 核心原则 | Agent 身份宣言 |
-| 铁门协议 | 通信规则 |
+| 安全铁律 | 仓库安全底线 |
+| 提交纪律 | Git 操作规范 |
 | 社交边界 | 权限边界 |
-| 提交纪律 | Git 安全规则 + PR 质量 |
-| 上游规范 | 外部协作规则 |
+| 快速启动 ValveOS | 入口指引 |
+
+### ValveOS 专属章节（仅 /valveos 后生效）
+
+位于 `docs/agent-rules/valveos-protocol.md`，包含路由表、铁门协议、角色切换协议等。
 
 ### 判断标准
 
-如果该章节的内容是"AI 遇到某场景时需要查找的信息"，则可路由化；如果是"AI 必须遵守的规则"，则不可路由化。
+如果该章节的内容是"AI 遇到某场景时需要查找的信息"，则属于 ValveOS 专属章节；
+如果是"AI 必须遵守的规则"，则属于基础规则章节。
 
 ## 变更历史
 

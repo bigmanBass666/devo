@@ -138,7 +138,8 @@ PR Manager 负责：
 
 | 文件 | 用途 |
 |------|------|
-| [AGENTS.md](../AGENTS.md) | 系统宪法（原则、协议、纪律） |
+| [AGENTS.md](../AGENTS.md) | 项目基础规则（安全铁律、提交纪律、社交边界、ValveOS 入口） |
+| [valveos-protocol.md](../docs/agent-rules/valveos-protocol.md) | ValveOS 完整协议（按需激活，/valveos 触发后加载） |
 | [SYSTEM-MANIFEST.md](./SYSTEM-MANIFEST.md) | 元数据唯一事实来源（**完整索引**） |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | 完整架构文档（通信机制、分支策略等） |
 | [agent-status.md](./shared/agent-status.md) | Agent 状态与任务追踪 |
