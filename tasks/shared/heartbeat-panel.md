@@ -17,7 +17,7 @@
 | Agent | 状态 | 心跳计数 | 最后活跃时间 | 备注 |
 |-------|------|---------|-------------|------|
 | Coordinator | 💓 Heartbeat | 1 | 2026-04-23T00:00:00Z | 处理TASK-ITER11-007，已分配给Worker |
-| Worker | ⚡ Working | 2 | 2026-04-23 | TASK-ITER11-007 分析中 |
+| Worker | 💓 Heartbeat | 3 | 2026-04-23 | TASK-ITER11-007 已完成，等待新任务 |
 | Planner | 🌙 Dormant | 0 | — | — |
 | PR Manager | 🌙 Dormant | 0 | — | — |
 | Maintainer | 🌙 Dormant | 0 | — | — |
