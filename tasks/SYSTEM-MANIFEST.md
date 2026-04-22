@@ -66,7 +66,8 @@
 
 | 路径 | 追踪 | 用途 |
 |------|------|------|
-| `AGENTS.md` | ✅ | 宪法/总纲（原则、协议、纪律） |
+| `AGENTS.md` | ✅ | 项目基础规则（安全铁律、提交纪律、社交边界、ValveOS 入口） |
+| `docs/agent-rules/valveos-protocol.md` | ✅ | ValveOS 完整协议（按需激活，/valveos 触发后加载） |
 | `tasks/SYSTEM-MANIFEST.md` | ✅ | 本文件（元数据唯一事实来源） |
 | `tasks/ARCHITECTURE.md` | ✅ | 完整架构文档（Agent 详情、通信机制、分支策略等） |
 | `tasks/shared/agent-status.md` | ✅ | Agent 状态与任务追踪 |

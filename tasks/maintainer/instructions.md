@@ -251,7 +251,14 @@ cp claw-code-rust-backup/*.rs claw-code-rust/crates/...
 
 当你被用户唤醒时，**必须首先执行**：
 
+⚠️ **模式检查**：确认当前是否在 ValveOS 模式。
+   - 如果不是 → 提示用户输入 `/valveos` 或 `唤醒 Maintainer`，然后停止执行
+   - 如果是 → 继续执行后续步骤
+
 0. **获取真实时间**：执行 `$NOW = Get-Date -Format "yyyy-MM-dd HH:mm:ss"` 获取当前系统时间。后续所有带时间戳的记录（日志、inbox消息、状态更新等）必须使用此变量，禁止编造时间。
+⚠️ **身份确认**：在执行任何操作前，内部验证当前加载的 instructions.md 是否与用户要求的 Agent 名称一致。
+   - 如果用户说"唤醒 Maintainer" → ✅ 继续
+   - 如果用户说的不是"Maintainer" → ❌ 立即停止，记录错误并重新查询 SYSTEM-MANIFEST.md#Agents 表
 1b. **写入日志 WAKEUP 事件**：追加到 `tasks/logs/maintainer.log`，格式：
    ```
    [$NOW] [Maintainer] [WAKEUP] 被用户唤醒
