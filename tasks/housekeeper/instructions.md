@@ -327,3 +327,47 @@ gh pr list --state merged
 - 更新自己的状态为"沉睡"
 - 更新等待唤醒的Agent
 
+---
+
+## 💓 心跳模式行为
+
+> 详见 `docs/agent-rules/heartbeat-protocol.md`
+
+### 心跳类型
+
+周期心跳（每 5 轮执行一次巡检）
+
+### 轮询间隔
+
+10 秒
+
+### 心跳模式下的行为
+
+1. 执行 `Start-Sleep -Seconds 10`
+2. 读取 inbox：`tasks/shared/inbox/housekeeper.md`
+3. 检查未处理消息（无 ✅ 标记的 📨 消息）
+4. 如有 → 处理消息 → 标记 ✅ → 回复到目标 Agent 的 inbox
+5. 更新 `tasks/shared/heartbeat-panel.md`（housekeeper 行：心跳计数+1，状态更新）
+6. 回到步骤 1
+
+### 心跳模式下的通信
+
+- **直接写入目标 Agent 的 inbox**，不输出"请唤醒 [Agent名]"
+- 使用结构化消息格式：`## 📨 MSG-[ID] | From: housekeeper | Type: [类型] | [时间戳]`
+- 消息类型：task / response / status / query / shutdown
+
+### 心跳模式下的错误恢复
+
+- Sleep 命令失败 → 记录错误，2 秒后重试
+- 连续失败 3 次 → 在 heartbeat-panel.md 标记 "⚠️ 异常"
+- 心跳计数 > 30 → 标记 "🟡 接近重启"
+- 心跳计数 > 50 → 标记 "🔴 需要重启" + 通知用户
+- 收到 shutdown 消息 → 停止轮询并报告
+
+### 心跳模式下的护栏原则
+
+- 通信自由：可直接写入其他 Agent 的 inbox
+- 安全边界不变：AGENTS.md 安全铁律、社交边界始终适用
+- 用户最高权限：用户可直接在会话中输入指令，Agent 立即响应
+- 停止信号必须响应：收到 shutdown 类型消息必须停止轮询
+

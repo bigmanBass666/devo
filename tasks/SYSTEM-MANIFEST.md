@@ -41,7 +41,8 @@
 
 **关键特征**:
 - 单会话模式: 在 /spec 模式下可用 sub-agent 替代 Worker 执行代码编写任务
-- 待机模式: 状态标记 + 断点续传（无轮询，AI 会话是一次性的）
+- 待机模式: 状态标记 + 断点续传（唤醒模式下无轮询，AI 会话是一次性的）
+- 心跳模式: Agent 自主轮询 inbox，直接通信（详见 docs/agent-rules/heartbeat-protocol.md）
 - 工作隔离: Worker 必须使用 git worktree 创建独立工作目录
 
 ---
@@ -52,11 +53,15 @@
 
 | 概念 | 定义 |
 |------|------|
-| 沉睡 | Agent 收到消息但未被人唤醒，无法执行 |
-| 唤醒 | 用户打开特定 Agent 的会话 |
+| 沉睡 | Agent 未启动心跳模式，需要用户唤醒才能执行 |
+| 唤醒 | 用户打开特定 Agent 的会话（含心跳唤醒——在独立会话中启动心跳模式） |
 | 睁眼 | 被唤醒的 Agent 主动读取自己的 inbox 消息 |
 | 声音 | Agent 写入共享文件的消息 |
-| 待机 | Agent 完成工作后标记状态，等待下次唤醒时断点续传 |
+| 待机 | Agent 完成工作后标记状态；心跳模式下继续轮询等待新任务 |
+| 💓 Heartbeat | Agent 处于轮询状态，自主检测并响应 inbox 消息 |
+| 🛡️ Guardrail | 用户作为安全护栏，守护安全边界而非通信阀门 |
+| 🔄 Polling Loop | Sleep → Read → Process → Respond → Loop 的循环模式 |
+| 📊 Heartbeat Count | Agent 完成的轮询循环次数，用于健康监测 |
 
 ---
 
@@ -79,6 +84,9 @@
 | `docs/agent-rules/cli-operations.md` | ✅ | CLI 操作参考 |
 | `docs/agent-rules/git-workflow.md` | ✅ | Git 工作流与上游协作 |
 | `docs/agent-rules/rust-conventions.md` | ✅ | Rust 编码与测试规范 |
+| `docs/agent-rules/heartbeat-protocol.md` | ✅ | 心跳协议规范（轮询循环、生命周期、消息格式、护栏原则） |
+| `docs/agent-rules/heartbeat-templates.md` | ✅ | 7 个 Agent 的心跳启动指令模板 |
+| `tasks/shared/heartbeat-panel.md` | ✅ | 心跳控制面板（Agent 状态、心跳计数、最后活跃时间） |
 | `tasks/logs/README.md` | ✅ | 日志系统说明 |
 
 ### 运行时数据文件
@@ -127,6 +135,9 @@
 | 🚨 Git 损坏 | git 命令报错时 | `cli-operations.md#.git损坏应急协议` |
 | 💤 待机模式 | Agent 待机时 | `cli-operations.md#待机模式` |
 | 🔧 COO 审计 | 每次文档改动后 | `valveos-audit skill` |
+| 💓 心跳协议 | `/heartbeat` 或粘贴心跳指令 | `heartbeat-protocol.md` |
+| 💓 心跳指令模板 | 启动 Agent 心跳模式 | `heartbeat-templates.md` |
+| 📊 心跳面板 | 查看所有 Agent 心跳状态 | `heartbeat-panel.md` |
 
 ---
 
@@ -150,6 +161,9 @@
 | ValveOS 路由条目 | **valveos-protocol.md → 路由表章节** | 其他文件不重复定义路由；本文件 Feature Index 与路由表保持覆盖一致 |
 | 铁门协议 | **valveos-protocol.md → 铁门协议章节** | AGENTS.md 不再包含铁门协议 |
 | 角色切换协议 | **valveos-protocol.md → 角色切换协议章节** | AGENTS.md 不再包含角色切换协议 |
+| 心跳协议规范 | **heartbeat-protocol.md → 全文** | valveos-protocol.md 引用；ARCHITECTURE.md 通信机制引用 |
+| 心跳指令模板 | **heartbeat-templates.md → 全文** | 各 instructions.md 引用但不重复模板内容 |
+| 心跳面板格式 | **heartbeat-panel.md → 面板结构** | heartbeat-protocol.md 引用更新规则 |
 
 ---
 

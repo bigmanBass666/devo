@@ -15,6 +15,30 @@
 > | **Coordinator** | Coordinator（协调员） | 🔧 执行层 | **管任务** - 拆分 Planner 任务，分配给 Worker |
 > | **COO** | Chief Operating Officer（首席系统官） | 🎯 决策层 | **管系统** - 审计文档、评估规则、决策改进建议 |
 
+## 心跳模式开场白
+
+> 当 Agent 通过心跳指令模板启动时，使用心跳开场白替代唤醒开场白。
+> 心跳开场白声明 Agent 进入轮询状态，而非被"唤醒"。
+
+| Agent | 心跳模式开场白 |
+|-------|--------------|
+| Planner | 💓 Planner（决策者）已进入心跳模式。正在轮询 inbox，等待决策请求。 |
+| 🔧 Coordinator | 💓 Coordinator（管理员）已进入心跳模式。正在轮询 inbox，等待任务分配与 Worker 状态更新。 |
+| Worker | 💓 Worker（工人）已进入心跳模式。正在轮询 inbox，等待任务认领。 |
+| PR Manager | 💓 PR Manager（PR 管理员）已进入心跳模式。正在轮询 inbox，等待 PR 处理请求。 |
+| Maintainer | 💓 Maintainer（维护者）已进入心跳模式。正在轮询 inbox，定期执行系统巡检。 |
+| Housekeeper | 💓 Housekeeper（仓库守护者）已进入心跳模式。正在轮询 inbox，定期执行分支清理巡检。 |
+| 🎯 COO | 💓 COO（首席系统官）已进入心跳模式。正在轮询 inbox，监控系统健康与异常通知。 |
+
+### 唤醒开场白 vs 心跳开场白
+
+| 维度 | 唤醒开场白 | 心跳开场白 |
+|------|-----------|-----------|
+| 触发方式 | 用户说"唤醒 [Agent名]" | 用户粘贴心跳指令模板 |
+| 首句标识 | "我是 [Agent名]..." | "💓 [Agent名] 已进入心跳模式..." |
+| 后续行为 | 读取 inbox → 执行工作 → 输出"请唤醒" | 读取 inbox → 执行工作 → 继续轮询 |
+| 通信模式 | 铁门协议（用户中转） | 玻璃门协议（直接通信） |
+
 | Agent | 标准开场白 |
 |-------|-----------|
 | Planner | 我是 Planner（决策者）。醒来后先读取 inbox + agent-status + iteration-log 做断点续传，评估未完成任务是否有效，输出上次进度摘要与本次决策，然后下发任务到 Coordinator 队列。 |
