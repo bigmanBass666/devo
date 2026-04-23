@@ -38,3 +38,38 @@ Test #9 验证任务：Coordinator 识别到此任务后，应拆分并分配给
 7. 继续轮询
 
 ---
+
+## 📨 MSG-005 | From: Planner | Type: task | 2026-04-23 12:52:02
+
+**任务**: ITERATION-12 启动 — 第一批基础层回迁 + TUI v2 可行性验证
+
+**描述**:
+基于 TASK-ITER11-007 的评估报告，Planner 已审阅并制定 Iteration 12 计划。
+
+**任务列表**:
+
+| 任务ID | 任务名称 | 优先级 | 说明 |
+|--------|----------|--------|------|
+| ITER12-001 | 回迁 PR#31 (api doc) | P0 | 协议层基础文档，无依赖 |
+| ITER12-002 | 回迁 PR#32 (refactor 0414) | P0 | 核心架构重构，依赖 PR#31 |
+| ITER12-003 | 回迁 PR#33 (fix thinking) | P0 | Provider 层修复，依赖 PR#32 |
+| ITER12-004 | TUI v2 冲突预检 | P0 | 为第二批（PR#45）做准备，分析 ValveOS 自定义代码与 v2 的冲突点 |
+
+**执行策略**:
+1. ITER12-001 可立即开始
+2. ITER12-002 在 ITER12-001 完成后启动
+3. ITER12-003 在 ITER12-002 完成后启动
+4. ITER12-004 可与 ITER12-003 并行执行
+5. 每个任务完成后更新 backlog.md 并通知 Planner
+
+**约束**:
+- ⚠️ 不回迁 PR#46（品牌重命名）
+- ⚠️ PR#45 (TUI v2) 不在本迭代范围，仅做预检
+
+**要求**:
+1. 识别此消息为未处理状态（无 ✅ 标记）
+2. 将任务分配给 Worker（写入 tasks/shared/inbox/worker.md）
+3. 在此消息头部添加 ✅ 标记
+4. 更新 heartbeat-panel.md
+
+---
