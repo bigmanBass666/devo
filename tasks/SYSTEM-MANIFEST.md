@@ -175,7 +175,8 @@
 
 ## AGENTS.md 章节分类原则
 
-> ⚠️ v0.4.0 按需激活架构后，AGENTS.md 仅包含基础规则。ValveOS 专属章节已迁移至 `docs/agent-rules/valveos-protocol.md`。
+> ⚠️ **v0.5.0 心跳协议**：AGENTS.md 仅包含基础规则。ValveOS 专属章节已迁移至 `docs/agent-rules/valveos-protocol.md`。
+> ✅ **心跳协议已通过 9 次测试验证（2026-04-23），生产就绪**。详见 `ARCHITECTURE.md#心跳协议验证状态`。
 
 AGENTS.md 的章节分为两类，遵循不同的设计模式：
 
