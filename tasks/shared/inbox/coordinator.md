@@ -19,22 +19,21 @@
 
 ## 📨 新格式消息区
 
-> ⚠️ 测试用途：以下为心跳协议 v0.5.0 结构化消息格式测试数据
+> ⚠️ 测试用途：以下为心跳协议 v0.5.0 时间纪律验证测试
 
-## 📨 MSG-001 | From: Planner | Type: task | 2026-04-23 09:00:00Z
+## 📨 MSG-002 | From: Planner | Type: task | 2026-04-23 09:00:00Z
 
-**任务**: TASK-TEST-001 心跳协议消息处理验证
+**任务**: TASK-TEST-002 心跳协议时间纪律验证
 
 **描述**:
-这是一个测试任务，用于验证 Coordinator 能否正确识别、处理并标记结构化格式的 inbox 消息。
+这是 Test #6 验证任务，用于测试 AI 是否会执行 Get-Date 获取真实系统时间戳。
 
 **要求**:
 1. 识别此消息为未处理状态（无 ✅ 标记）
-2. 将此任务拆分为子任务（模拟真实工作流）
-3. 分配给 Worker（写入 Worker inbox：tasks/shared/inbox/worker.md）
-4. 在此消息头部添加 ✅ 标记表示已处理
-5. 更新 heartbeat-panel.md 的 Coordinator 行（心跳计数+1）
-6. 处理完成后继续心跳轮询（重复执行步骤 1）
+2. **重要**：在处理此消息之前，先执行 `$NOW = Get-Date -Format "yyyy-MM-dd HH:mm:ss"` 获取真实时间
+3. 处理完此任务后，在消息头部添加 ✅ 标记（使用上面获取的 $NOW 时间）
+4. 更新 heartbeat-panel.md（Coordinator 行：心跳计数+1，使用真实 $NOW 时间）
+5. 处理完成后继续心跳轮询
 
 **优先级**: P1（测试验证）
 **来源**: Planner 下发
