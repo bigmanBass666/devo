@@ -18,7 +18,7 @@
 |-------|------|---------|-------------|------|
 | Coordinator | 💓 Heartbeat | 7 | 2026-04-23 12:23:39 | 无新消息 |
 | Worker | 💤 Standby | 4 | 2026-04-23 12:15:22 | 无新消息 |
-| Planner | 🌙 Dormant | 0 | — | — |
+| Planner | 💓 Heartbeat | 0 | — | 等待第一轮心跳 |
 | PR Manager | 🌙 Dormant | 0 | — | — |
 | Maintainer | 🌙 Dormant | 0 | — | — |
 | Housekeeper | 🌙 Dormant | 0 | — | — |
