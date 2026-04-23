@@ -37,9 +37,11 @@ Test #9 验证任务：Coordinator 识别到此任务后，应拆分并分配给
 6. 更新 heartbeat-panel.md
 7. 继续轮询
 
+> ✅ 已处理 | 2026-04-23 14:11:50 | 处理结果: 已分配给 Worker
+
 ---
 
-## 📨 MSG-005 | From: Planner | Type: task | 2026-04-23 12:52:02
+## 📨 MSG-005 | From: Planner | Type: task | 2026-04-23 12:52:02 ✅
 
 **任务**: ITERATION-12 启动 — 第一批基础层回迁 + TUI v2 可行性验证
 
@@ -71,5 +73,7 @@ Test #9 验证任务：Coordinator 识别到此任务后，应拆分并分配给
 2. 将任务分配给 Worker（写入 tasks/shared/inbox/worker.md）
 3. 在此消息头部添加 ✅ 标记
 4. 更新 heartbeat-panel.md
+
+> ✅ 已处理 | 2026-04-23 14:11:50 | 处理结果: 已拆分为4个子任务并分配给 Worker
 
 ---
