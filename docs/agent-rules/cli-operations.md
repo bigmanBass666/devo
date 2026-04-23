@@ -241,8 +241,11 @@ Agent会执行以下操作：
 3. **尝试修复**：
    - `index.lock` 残留 → `rm .git/index.lock`
    - 轻微损坏 → `git fsck --full` 按提示修复
-   - HEAD 损坏 → `git reset --hard HEAD` 或 `git reset --hard origin/main`
-4. **严重损坏**（无法修复）→ 告知用户："⚠️ .git 严重损坏，建议用户手动处理"
+   - HEAD 损坏 → `git reset --soft HEAD~1` 撤销提交（不丢失工作区）
+4. **严重损坏（无法修复）** → 从远程 clone 恢复：
+   - `git clone https://github.com/bigmanBass666/claw-code-rust.git [临时目录]`
+   - 将临时目录的 `.git` 复制到原仓库：`Copy-Item [临时目录]/.git [原仓库]/.git`
+   - 回到原仓库：`git reset --hard HEAD`
 5. **修复后验证** → `git status` + `git log --oneline -3` 确认正常
 
 ### 安全规则

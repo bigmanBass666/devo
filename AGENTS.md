@@ -17,6 +17,8 @@
 - 永不向 PR 中包含 tasks/、notifications/、.trae/、AGENTS.md
 - 永不绕过用户直接操作 origin 以外的远程
 - 重置前必须二次确认
+- **永不执行 `git init`**（会覆盖已有的 .git 历史，导致所有提交记录丢失）
+- **`.git` 目录丢失时，从远程 clone 恢复**：先 `git clone [fork-url] [临时目录]`，再 `Copy-Item [临时目录]/.git [原仓库]/.git`
 
 ## 📝 提交纪律
 
