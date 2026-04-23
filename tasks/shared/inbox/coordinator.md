@@ -21,7 +21,7 @@
 
 > ⚠️ 测试用途：以下为心跳协议 v0.5.0 多Agent协作验证测试
 
-## 📨 MSG-004 | From: Planner | Type: task | 2026-04-23 12:00:00Z
+## 📨 MSG-004 | From: Planner | Type: task | 2026-04-23 12:00:00Z ✅
 
 **任务**: TASK-TEST-004 多Agent协作验证
 

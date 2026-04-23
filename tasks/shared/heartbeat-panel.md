@@ -16,8 +16,8 @@
 
 | Agent | 状态 | 心跳计数 | 最后活跃时间 | 备注 |
 |-------|------|---------|-------------|------|
-| Coordinator | 💓 Heartbeat | 0 | — | 等待第一轮心跳 |
-| Worker | 💓 Heartbeat | 0 | — | 等待第一轮心跳 |
+| Coordinator | 💓 Heartbeat | 7 | 2026-04-23 12:23:39 | 无新消息 |
+| Worker | 💤 Standby | 4 | 2026-04-23 12:15:22 | 无新消息 |
 | Planner | 🌙 Dormant | 0 | — | — |
 | PR Manager | 🌙 Dormant | 0 | — | — |
 | Maintainer | 🌙 Dormant | 0 | — | — |
