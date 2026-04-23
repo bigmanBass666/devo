@@ -4,12 +4,12 @@
 
 ```
 origin (bigmanBass666/claw-code-rust)  ← 你的 fork
-upstream (7df-lab/claw-code-rust)     ← 上游（只读）
+upstream (7df-lab/devo)               ← 上游（只读）
 ```
 
 **首次设置**：
 ```bash
-git remote add upstream https://github.com/7df-lab/claw-code-rust.git
+git remote add upstream https://github.com/7df-lab/devo.git
 git fetch upstream
 ```
 
