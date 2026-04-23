@@ -6,7 +6,8 @@
 
 ## Upstream PR 回迁评估报告
 
-> 生成时间：2026-04-23 | 任务：TASK-ITER11-007 | 分析者：Worker
+> 生成时间：2026-04-23 11:56:00 | 任务：TASK-ITER11-007 | 分析者：Worker
+> 更新：2026-04-23 11:56:00 - 验证 upstream 最新状态，添加 Issue #43
 
 ### 评估总览
 
@@ -20,6 +21,13 @@
 | #45 | upgrade tui to v2 | MERGED | 🔴 P0-高 | 🔴 高 | ⚠️ 推荐但需大量适配 |
 | #34 | fix config BUG; add markdown support for TUI | MERGED | 🟡 P1-中 | 🟡 中 | ✅ 推荐回迁 |
 | #33 | Dev/fix thinking | MERGED | 🟡 P1-中 | 🟡 中 | ✅ 推荐回迁 |
+
+### 最新动态（2026-04-23 验证）
+
+- **Upstream 仓库名**：实际为 `7df-lab/devo`（fork 自 `7df-lab/claw-code-rust`）
+- **upstream/main 最新 commit**：`c55c4b0` (ci) — 2026-04-22 17:55
+- **当前 OPEN PR**：仅 #30（feat: emit plan items）
+- **Issue #43**：第三方独立评估报告，评分 7.83/10，详见下方
 
 ### PR 详细分析
 
@@ -179,6 +187,28 @@ PR#31 (api doc) ← PR#32 (refactor) ← PR#45 (TUI v2) ← PR#46 (brand)
 - ⚠️ PR#45（TUI v2）变更量极大（53000+行），建议分配专门迭代处理
 - ⚠️ PR#33 移除了 TurnToolMode 和 SystemPromptMode，需确认 ValveOS 是否依赖这些类型
 - ⚠️ PR#49 移除了 ProviderFamily，需确认 ValveOS 的 provider 配置是否受影响
+
+### Issue #43 — 第三方独立评估报告（重要参考）
+
+- **标题**：📊 Comprehensive Independent Evaluation of claw-code-rust (7.83/10)
+- **评估者**：z.ai agent mode (GLM-5.1) | **日期**：April 2026
+- **核心结论**：claw-code-rust 是唯一一个从 Claude Code 泄露代码中实现真正技术独立的衍生项目
+- **关键优势**：
+  - 真正的干净房间开发（11份规格文档，无专有代码）
+  - 技术独立性已证明（Rust Edition 2024 + Resolver 3）
+  - 支持 6+ providers（Claude, OpenAI, z.ai, Qwen, Deepseek, Ollama）
+  - MIT 许可证，法律立场清晰
+- **需改进**：
+  - 单一维护者依赖（95%+ 提交来自 wangtsiao）
+  - 早期社区（251 stars）
+  - 文档需扩展
+- **战略建议**：
+  1. 差异化品牌定位
+  2. 扩大贡献者基础
+  3. 投资文档
+  4. 建立治理机制
+  5. 构建集成测试
+  6. 寻求企业合作
 
 ---
 
